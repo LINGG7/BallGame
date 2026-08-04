@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MagnetPlusRange
-  m_Shader: {fileID: 4800000, guid: 3d07df6d3b144949a7548eb4ee95ab36, type: 3}
+  m_Shader: {fileID: 4800000, guid: fd0da868e7145db43a9f47f58647cb4f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

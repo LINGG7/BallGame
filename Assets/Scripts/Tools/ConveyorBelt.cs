@@ -5,7 +5,7 @@ namespace BallGame.Tools
 {
     public sealed class ConveyorBelt : MonoBehaviour
     {
-        [SerializeField] private float surfaceForce = 8f;
+        [SerializeField] private float surfaceForce = 12f;
         [SerializeField] private GameObject glowObject;
 
         private void Awake()

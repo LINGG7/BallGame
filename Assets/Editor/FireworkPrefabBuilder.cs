@@ -6,8 +6,9 @@ namespace BallGame.Editor
 {
     public static class FireworkPrefabBuilder
     {
-        private const string MaterialPath = "Assets/Materials/FireworkParticle.mat";
+        private const string MaterialPath = "Assets/Resources/Materials/FireworkParticle.mat";
         private const string PrefabPath = "Assets/Resources/Prefabs/Firework.prefab";
+        private const string RecoveredExplosionPrefabPath = "Assets/Resources/Prefabs/FireworkBoom.prefab";
         private const string LauncherPrefabPath = "Assets/Resources/Prefabs/FireworkLauncher.prefab";
         private const float DefaultLiftDuration = 0.8f;
         private const float DefaultLiftHeight = 1.35f;
@@ -63,6 +64,97 @@ namespace BallGame.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("Rebuilt firework prefab: " + PrefabPath);
+        }
+
+        [MenuItem("Ball Game/Effects/Recover Firework Explosion")]
+        public static void RecoverFireworkExplosion()
+        {
+            GameObject recoveredExplosionPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RecoveredExplosionPrefabPath);
+            if (recoveredExplosionPrefab == null)
+            {
+                throw new System.IO.FileNotFoundException("Recovered explosion prefab was not found.", RecoveredExplosionPrefabPath);
+            }
+
+            Transform recoveredColorDebris = recoveredExplosionPrefab.transform.Find("ColorDebris");
+            Transform recoveredSparkleFades = recoveredExplosionPrefab.transform.Find("SparkleFades");
+            if (recoveredColorDebris == null || recoveredSparkleFades == null)
+            {
+                throw new System.InvalidOperationException("FireworkBoom.prefab does not contain the complete recovered explosion hierarchy.");
+            }
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PrefabPath);
+            try
+            {
+                Transform explosionRoot = prefabRoot.transform.Find("Explosion");
+                ParticleSystem coreFlash = explosionRoot != null
+                    ? explosionRoot.Find("CoreFlash")?.GetComponent<ParticleSystem>()
+                    : null;
+                if (explosionRoot == null || coreFlash == null)
+                {
+                    throw new System.InvalidOperationException("Firework.prefab is missing Explosion/CoreFlash.");
+                }
+
+                ReplaceRecoveredChild(explosionRoot, recoveredColorDebris);
+                ReplaceRecoveredChild(explosionRoot, recoveredSparkleFades);
+
+                Transform colorDebris = explosionRoot.Find("ColorDebris");
+                ParticleSystem sparkleFades = explosionRoot.Find("SparkleFades")?.GetComponent<ParticleSystem>();
+                ParticleSystem[] debrisSystems = new ParticleSystem[6];
+                for (int i = 0; i < debrisSystems.Length; i++)
+                {
+                    debrisSystems[i] = colorDebris?.Find("Debris_" + i.ToString("00"))?.GetComponent<ParticleSystem>();
+                    if (debrisSystems[i] == null)
+                    {
+                        throw new System.InvalidOperationException("Recovered explosion is missing Debris_" + i.ToString("00") + ".");
+                    }
+                }
+
+                if (sparkleFades == null)
+                {
+                    throw new System.InvalidOperationException("Recovered explosion is missing SparkleFades ParticleSystem.");
+                }
+
+                FireworkEffect fireworkEffect = prefabRoot.GetComponent<FireworkEffect>();
+                if (fireworkEffect == null)
+                {
+                    throw new System.InvalidOperationException("Firework.prefab is missing FireworkEffect.");
+                }
+
+                SerializedObject serializedObject = new SerializedObject(fireworkEffect);
+                SerializedProperty systems = serializedObject.FindProperty("explosionSystems");
+                systems.arraySize = 8;
+                systems.GetArrayElementAtIndex(0).objectReferenceValue = coreFlash;
+                for (int i = 0; i < debrisSystems.Length; i++)
+                {
+                    systems.GetArrayElementAtIndex(i + 1).objectReferenceValue = debrisSystems[i];
+                }
+
+                systems.GetArrayElementAtIndex(7).objectReferenceValue = sparkleFades;
+                serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, PrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("Recovered Firework Explosion from: " + RecoveredExplosionPrefabPath);
+        }
+
+        private static void ReplaceRecoveredChild(Transform destinationParent, Transform recoveredChild)
+        {
+            Transform existing = destinationParent.Find(recoveredChild.name);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+
+            GameObject recoveredCopy = UnityEngine.Object.Instantiate(recoveredChild.gameObject, destinationParent);
+            recoveredCopy.name = recoveredChild.name;
+            recoveredCopy.transform.SetSiblingIndex(destinationParent.childCount - 1);
         }
 
         [MenuItem("Ball Game/Effects/Rebuild Firework Launcher Prefab")]

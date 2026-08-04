@@ -1420,7 +1420,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: daeb0c15422e06a4896566bd91c15ba3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: de6f7b1147e89c5428639b83a73235a9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3131,7 +3131,7 @@ MonoBehaviour:
   brushMinWidth: 1000
   brushMaxWidth: 1580
   brushHorizontalPadding: 260
-  brushHeight: 400
+  brushHeight: 200
 --- !u!114 &9100000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4947,7 +4947,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: daeb0c15422e06a4896566bd91c15ba3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: de6f7b1147e89c5428639b83a73235a9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
