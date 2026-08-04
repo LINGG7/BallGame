@@ -1,0 +1,532 @@
+# BallGame 恢复损坏文件报告
+
+生成日期：2026-08-03
+
+项目采用 Unity Force Text 序列化。下列文本型资源包含 NUL、Library/Bee 缓存签名、PE 二进制或完全不符合扩展名的内容，属于确认损坏。
+
+## 1. 确认损坏的文本/Unity 资源（228）
+
+- Assets\Editor\BallGamePrototypeBuilder.cs — contains Library/cache/binary signature; not C# source
+- Assets\Editor\LevelSceneUpgradeUtility.cs — not C# source
+- Assets\Editor\LowestCostModeAssetUtility.cs — contains NUL/binary data; not C# source
+- Assets\Resources\Materials\BubbleParticle.mat — contains NUL/binary data
+- Assets\Resources\Materials\MagnetMinusRange.mat — contains Library/cache/binary signature
+- Assets\Resources\Prefabs\AntiGravity.prefab — contains Library/cache/binary signature
+- Assets\Resources\Prefabs\Ball.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\BallBase.prefab — contains Library/cache/binary signature
+- Assets\Resources\Prefabs\CurveObstacle.Id_380000c5a0001f4.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\CurveObstacle.Id_380000c5a00031f.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\LayeredCurveCrossing.prefab — contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WaterZone.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000100.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000162.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00016e.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00017a.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000186.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000192.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00019e.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0001b9.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0001c5.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0001d1.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00021f.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0002f0.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00033c.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000348.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000389.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000395.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0003c5.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0003d1.prefab — contains NUL/binary data
+- Assets\Resources\Prefabs\WorldBackground.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5517000e.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00004f.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000130.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000173.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00017f.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0001e5.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000209.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000224.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0002fa.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000382.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00038e.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003be.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003ca.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000435.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00044c.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00046a.prefab — contains NUL/binary data
+- Assets\Resources\UI\ChallengeLevelSelectUI.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000031.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000034.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000041.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00004d.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00006f.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0000b0.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0000c0.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0000f4.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0000f7.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000108.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00010b.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00011c.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00011e.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000122.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00012e.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000143.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000159.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000165.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000171.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00017d.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000189.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000195.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0001a1.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0001ad.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0001b0.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0001bc.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0001c8.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0001d4.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0001e0.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0001e3.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0001f1.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0001fc.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000204.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000207.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000216.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000222.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000239.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00023c.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000249.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00024c.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000258.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00028c.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000298.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0002a2.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0002af.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0002c3.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0002cd.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0002d5.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0002dd.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0002e5.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0002ed.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0002f8.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00031c.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000330.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000333.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00033f.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00034b.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000357.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00035f.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000365.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000368.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000374.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00037d.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000380.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00038c.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00039a.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00039d.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0003aa.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0003ad.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0003b9.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0003bc.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0003c8.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0003d9.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0003e7.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0003ea.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0003f7.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a0003fa.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000406.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00040e.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00041a.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000430.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000433.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000440.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00044a.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000468.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000475.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000498.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0004bc.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0004be.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0004c1.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0004d0.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a0004f2.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000514.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00051f.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a00052d.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00053f.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a000559.prefab — contains NUL/binary data
+- Assets\Resources\UI\GameHud.Id_380000c5a00055b.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\GameHud.Id_380000c5a000560.prefab — contains NUL/binary data
+- Assets\Resources\UI\LevelSelectUI.prefab — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c396f0010.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00003a.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0000fd.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000134.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00015f.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00016b.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000177.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000183.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00018f.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00019b.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001a7.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001b6.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001c2.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001ce.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001da.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001e9.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00020d.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00021c.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000228.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000242.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000252.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0002a8.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0002fe.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00032a.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000339.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000345.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000351.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00036e.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000386.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000392.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003a3.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003c2.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003ce.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003e0.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003f0.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000400.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000414.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000439.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000450.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00046e.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00049e.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0004c7.prefab — contains Library/cache/binary signature
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000533.prefab — contains NUL/binary data
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000545.prefab — contains NUL/binary data
+- Assets\Scenes\ChallengeLevels\Challenge_01.Id_380000c5a00013d.unity — contains NUL/binary data
+- Assets\Scenes\ChallengeLevels\Challenge_02.Id_380000c5a0002aa.unity — contains NUL/binary data
+- Assets\Scenes\ChallengeLevels\Challenge_04.Id_380000c5a00025d.unity — contains NUL/binary data
+- Assets\Scenes\ChallengeLevels\Challenge_05.Id_380000c5a000294.unity — contains NUL/binary data
+- Assets\Scenes\ChallengeLevels\Challenge_05.unity — contains NUL/binary data
+- Assets\Scenes\NormalLevels\Level_08.unity — contains NUL/binary data
+- Assets\Scenes\NormalLevels\Level_10.Id_380000c5a0002bc.unity — contains NUL/binary data; contains Library/cache/binary signature
+- Assets\Scenes\NormalLevels\Level_12.Id_380000c5a0002c6.unity — contains NUL/binary data
+- Assets\Scenes\NormalLevels\Level_14.Id_380000c5a00006e.unity — contains NUL/binary data
+- Assets\Scenes\NormalLevels\Level_15.Id_380000c5a000377.unity — contains Library/cache/binary signature
+- Assets\Scenes\NormalLevels\Level_16.Id_380000c5a0001f6.unity — contains Library/cache/binary signature
+- Assets\Scen…808 tokens truncated…一定每个都完全不可读，但不是正常项目文件名，并造成重复资源、重复 GUID 或错误内容。恢复前应隔离，不能直接保留在 Assets 内。
+
+- Assets\Animations\GoalFlag_Wave.anim.Id_3a00000000091f6.meta
+- Assets\Animations\GoalFlag_Wave.Id_3a00000000091f4.anim
+- Assets\Resources.Id_3a00000000091ea.meta
+- Assets\Resources\Audio\SFX\BallRolling.Id_3a0000000009373.wav
+- Assets\Resources\Audio\SFX\BallRolling.Id_3a0000000009380.wav
+- Assets\Resources\Audio\SFX\BallRolling.wav.Id_3a0000000009374.meta
+- Assets\Resources\Audio\SFX\BallRolling.wav.Id_3a0000000009381.meta
+- Assets\Resources\Audio\SFX\Click.Id_3a000000000937c.wav
+- Assets\Resources\Audio\SFX\Click.wav.Id_3a000000000937d.meta
+- Assets\Resources\Audio\SFX\Failure.Id_3a000000000935d.wav
+- Assets\Resources\Audio\SFX\Failure.Id_3a000000000935f.wav
+- Assets\Resources\Audio\SFX\Failure.Id_3a0000000009360.wav
+- Assets\Resources\Audio\SFX\Failure.wav.Id_3a000000000935e.meta
+- Assets\Resources\Audio\SFX\Failure.wav.Id_3a0000000009363.meta
+- Assets\Resources\Audio\SFX\Failure.wav.Id_3a0000000009364.meta
+- Assets\Resources\Audio\SFX\FireworkPre.Id_3a0000000009362.wav
+- Assets\Resources\Audio\SFX\FireworkPre.wav.Id_3a0000000009375.meta
+- Assets\Resources\Audio\SFX\SplashOut.Id_3a0000000009367.wav
+- Assets\Resources\Audio\SFX\SplashOut.wav.Id_3a0000000009368.meta
+- Assets\Resources\Prefabs\Ball.Id_380000c5a00022b.prefab
+- Assets\Resources\Prefabs\Ball.Id_380000c5a000495.prefab
+- Assets\Resources\Prefabs\Ball.Id_380000c5a0004e4.prefab
+- Assets\Resources\Prefabs\Ball.Id_380000c5a000562.prefab
+- Assets\Resources\Prefabs\CurveObstacle.Id_380000c5a00002e.prefab
+- Assets\Resources\Prefabs\CurveObstacle.Id_380000c5a0001f4.prefab
+- Assets\Resources\Prefabs\CurveObstacle.Id_380000c5a00025b.prefab
+- Assets\Resources\Prefabs\CurveObstacle.Id_380000c5a00031f.prefab
+- Assets\Resources\Prefabs\Firework.Id_380000c5a000538.prefab
+- Assets\Resources\Prefabs\LayeredCurveCrossing.Id_380000c5a000537.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000100.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000162.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00016e.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00017a.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000186.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000192.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00019e.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0001b9.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0001c5.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0001d1.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00021f.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0002f0.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a00033c.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000348.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000389.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a000395.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0003c5.prefab
+- Assets\Resources\Prefabs\WorldBackground.Id_380000c5a0003d1.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5517000e.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000036.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00004f.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000071.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0000b2.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0000c2.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0000f9.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00010d.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000130.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00015b.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000167.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000173.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00017f.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00018b.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000197.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0001a3.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0001b2.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0001be.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0001ca.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0001d6.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0001e5.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000209.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000218.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000224.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00023e.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00024e.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00029a.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0002a4.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0002fa.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000335.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000341.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00034d.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00036a.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000382.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00038e.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00039f.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003af.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003be.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003ca.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003dc.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003ec.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0003fc.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000410.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000435.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00044c.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00046a.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00049a.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0004c3.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a0004d2.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000516.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a00052f.prefab
+- Assets\Resources\UI\ChallengeLevelSelectUI.Id_380000c5a000541.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000031.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000034.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000041.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00004d.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00006f.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0000a0.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0000b0.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0000c0.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0000f4.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0000f7.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000108.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00010b.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00011c.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00011e.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000122.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00012e.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000143.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000159.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000165.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000171.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00017d.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000189.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000195.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001a1.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001ad.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001b0.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001bc.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001c8.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001d4.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001e0.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001e3.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001f1.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0001fc.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000204.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000207.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000216.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000222.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000239.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00023c.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000249.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00024c.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000258.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00028c.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000298.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002a2.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002af.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002c3.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002cd.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002d5.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002dd.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002e5.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002ed.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0002f8.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00031c.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000330.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000333.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00033f.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00034b.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000357.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00035f.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000365.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000368.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000374.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00037d.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000380.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00038c.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00039a.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00039d.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003aa.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003ad.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003b9.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003bc.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003c8.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003d9.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003e7.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003ea.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003f7.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0003fa.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000406.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00040e.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00041a.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000430.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000433.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000440.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00044a.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000468.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000475.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000498.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0004bc.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0004be.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0004c1.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0004d0.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0004f0.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a0004f2.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000514.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00051f.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00052d.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00053f.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000559.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00055b.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a00055d.prefab
+- Assets\Resources\UI\GameHud.Id_380000c5a000560.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c396f0010.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00003a.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000053.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000075.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0000c6.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0000fd.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000111.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000134.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00015f.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00016b.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000177.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000183.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00018f.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00019b.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001a7.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001b6.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001c2.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001ce.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001da.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0001e9.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00020d.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00021c.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000228.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000242.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000252.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00029e.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0002a8.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0002fe.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00032a.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000339.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000345.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000351.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00036e.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000386.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000392.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003a3.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003b3.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003c2.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003ce.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003e0.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0003f0.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000400.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000414.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000439.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000450.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00046e.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00049e.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0004c7.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a0004d6.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a00051a.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000533.prefab
+- Assets\Resources\UI\MainMenuUI.Id_380000c5a000545.prefab
+- Assets\Scenes\ChallengeLevels\Challenge_01.Id_380000c5a00013d.unity
+- Assets\Scenes\ChallengeLevels\Challenge_02.Id_380000c5a0002aa.unity
+- Assets\Scenes\ChallengeLevels\Challenge_02.Id_380000c5a0002f3.unity
+- Assets\Scenes\ChallengeLevels\Challenge_04.Id_380000c5a00025d.unity
+- Assets\Scenes\ChallengeLevels\Challenge_05.Id_380000c5a000294.unity
+- Assets\Scenes\ChallengeLevels\Challenge_06.Id_380000c5a000231.unity
+- Assets\Scenes\NormalLevels\Level_10.Id_380000c5a0002bc.unity
+- Assets\Scenes\NormalLevels\Level_12.Id_380000c5a0002c6.unity
+- Assets\Scenes\NormalLevels\Level_14.Id_380000c5a00006e.unity
+- Assets\Scenes\NormalLevels\Level_15.Id_380000c5a000317.unity
+- Assets\Scenes\NormalLevels\Level_15.Id_380000c5a000377.unity
+- Assets\Scenes\NormalLevels\Level_16.Id_380000c5a0001f6.unity
+- Assets\Scenes\NormalLevels\Level_16.Id_380000c5a0002d0.unity
+- Assets\Scenes\NormalLevels\Level_18.Id_380000c5a0001ff.unity
+- Assets\Scenes\NormalLevels\Level_18.Id_380000c5a0002d8.unity
+- Assets\Scenes\NormalLevels\Level_18.Id_380000c5a0002e0.unity
+- Assets\Scenes\NormalLevels\Level_18.Id_380000c5a0002e8.unity
+- Assets\Scenes\NormalLevels\Level_18.Id_380000c5a00035a.unity
+- Assets\Scenes\NormalLevels\Level_18.Id_380000c5a000409.unity
+- Assets\Scenes\NormalLevels\Level_19.Id_380000c5a000103.unity
+- Assets\Scenes\NormalLevels\Level_20.Id_380000c5a000321.unity
+- Assets\Scenes\NormalLevels\Level_20.Id_380000c5a0003d4.unity
+- Assets\Scripts\UI\ShopPanelController.Id_380000c5a0004ff.cs
+- Assets\Scripts\UI\ShopPanelController.Id_380000c5a000500.cs
+
+## 4. 重复 GUID（9 组）
+
+- GUID 0565b2c29ddf0bd4389ef73495ac4792
+  - Assets\Animations\Flag_Wave.anim.meta
+  - Assets\Resources\Animations\Flag\Flag_Wave.anim.meta
+- GUID 096363d3ff160494dbdaf59ee59104b0
+  - Assets\Resources\Audio\SFX\Click.wav.Id_3a000000000937d.meta
+  - Assets\Resources\Audio\SFX\Click.wav.meta
+- GUID 1e23dc40467328640aa5862daaa66dc5
+  - Assets\Animations\GoalFlag_Wave.anim.Id_3a00000000091f6.meta
+  - Assets\Animations\GoalFlag_Wave.anim.meta
+- GUID 2dfa10abaa19f4e439abd150cdd5beed
+  - Assets\Materials\PureColor.mat.meta
+  - Assets\Resources\Materials\PureColor.mat.meta
+- GUID 5bcab0fa9c491a745a0a52b20aa2c2fd
+  - Assets\Resources\Audio\SFX\FireworkPre.wav.Id_3a0000000009375.meta
+  - Assets\Resources\Audio\SFX\FireworkPre.wav.meta
+- GUID 8ba0fd7efa2c2244bb06786666c955e0
+  - Assets\Resources\Audio\SFX\Failure.wav.Id_3a000000000935e.meta
+  - Assets\Resources\Audio\SFX\Failure.wav.Id_3a0000000009363.meta
+  - Assets\Resources\Audio\SFX\Failure.wav.Id_3a0000000009364.meta
+  - Assets\Resources\Audio\SFX\Failure.wav.meta
+- GUID e535423b3df0878458276628b86baba7
+  - Assets\Resources\Audio\SFX\SplashOut.wav.Id_3a0000000009368.meta
+  - Assets\Resources\Audio\SFX\SplashOut.wav.meta
+- GUID eb4a853c5273d3d4abc15df23e4c7f95
+  - Assets\Animations\Fan\Fan Animation.anim.meta
+  - Assets\Resources\Animations\Fan\Fan Animation.anim.meta
+- GUID ec755cdb0484cd246a47ea8b6fa64f59
+  - Assets\Resources\Audio\SFX\BallRolling.wav.Id_3a0000000009374.meta
+  - Assets\Resources\Audio\SFX\BallRolling.wav.Id_3a0000000009381.meta
+  - Assets\Resources\Audio\SFX\BallRolling.wav.meta
+
+## 修复优先级
+
+1. 最优：从 Git、云盘、原磁盘镜像或未损坏备份恢复 Assets、Packages、ProjectSettings，保留原 .meta GUID。
+2. 无备份时：从 Library/ScriptAssemblies/Assembly-CSharp.dll 和 Assembly-CSharp-Editor.dll 反编译恢复脚本；文件名、类名与原 .meta GUID 对齐。
+3. Prefab/Scene：优先从未损坏副本恢复；若无副本，只能从可读 YAML 段、构建产物或重新搭建场景恢复。
+4. 图片/音频/字体：从发布包、Android/iOS/WebGL 构建产物或源素材重新提取；不要用 Library 缓存文件冒充源文件。
+5. 将所有 .Id_ 文件移出 Assets 后，逐组处理重复 GUID；确认 canonical 文件正确后再删除冲突副本。
+6. 仅在源文件恢复完成后删除 Library 并重新打开 Unity 验证。

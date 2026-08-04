@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5366fc836212da84c8065c6d87dcecc7, type: 3}
+  m_Name: AntiGravity
+  m_EditorClassIdentifier: 
+  displayName: "\u53CD\u91CD\u529B"
+  prefab: {fileID: 470010000000000001, guid: 64c54d741df246e49ad78d41ca7f4d76, type: 3}
+  inventoryButtonPrefab: {fileID: 4889453285248847547, guid: ff9f2084581be0d4ea762c029f4ec630, type: 3}
+  icon: {fileID: 21300000, guid: 62d5b0de3da7eed448e0b730acf65fbb, type: 3}
+  iconColor: {r: 0.42352942, g: 0.3019608, b: 1, a: 1}
+  defaultCount: 1
+  cost: 500
+  canRotate: 0
+  rotationStep: 15
+  placementRadius: 1.2

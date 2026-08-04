@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58dc41baaf4b4f1fb06f7bd337caf001, type: 3}
+  m_Name: LevelCatalog
+  m_EditorClassIdentifier: 
+  levels:
+  - levelNumber: 1
+    sceneName: Level_01
+    displayTitle: "01 \u6728\u677F\u5C0F\u5F84"
+    levelDefinition: {fileID: 11400000, guid: 9ff1b25414c652545914deeb17de6d06, type: 2}
+  - levelNumber: 2
+    sceneName: Level_02
+    displayTitle: "02 \u8DF3\u8D77\u6765"
+    levelDefinition: {fileID: 11400000, guid: 65b64376db1648143b21cd6cf4795aef, type: 2}
+  - levelNumber: 3
+    sceneName: Level_03
+    displayTitle: "03 \u98DE\u8D77\u6765"
+    levelDefinition: {fileID: 11400000, guid: 5b1eed78d7ce1574f8c04a005ae9ae48, type: 2}
+  - levelNumber: 4
+    sceneName: Level_04
+    displayTitle: "04 \u722C\u5C71"
+    levelDefinition: {fileID: 11400000, guid: b32b2daedd3e98f408e0ec2d65376e9e, type: 2}
+  - levelNumber: 5
+    sceneName: Level_05
+    displayTitle: "05 \u5438\u5F15\u529B"
+    levelDefinition: {fileID: 11400000, guid: c880fc2192315d0479f7cd86de9573df, type: 2}
+  - levelNumber: 6
+    sceneName: Level_06
+    displayTitle: "06 \u6392\u65A5\u529B"
+    levelDefinition: {fileID: 11400000, guid: 9d88792d9d527a948a39df9b2e5ecf62, type: 2}
+  - levelNumber: 7
+    sceneName: Level_07
+    displayTitle: "07 \u4F5C\u5F0A\u5668"
+    levelDefinition: {fileID: 11400000, guid: 1deb43928f13b3c438780e44f7247e9e, type: 2}
+  - levelNumber: 8
+    sceneName: Level_08
+    displayTitle: "08 \u8FC7\u5C71\u8F66"
+    levelDefinition: {fileID: 11400000, guid: f982c2f2433af7d4386f4db30d44af4e, type: 2}
+  - levelNumber: 9
+    sceneName: Level_09
+    displayTitle: "09 \u662F\u7537\u4EBA\u5C31\u4E0A1\u5C42"
+    levelDefinition: {fileID: 11400000, guid: 7f0e92521f05e87439d057bccaa67e4a, type: 2}
+  - levelNumber: 10
+    sceneName: Level_10
+    displayTitle: "10 \u5F62\u540C\u964C\u8DEF"
+    levelDefinition: {fileID: 11400000, guid: 41858f249d8f6dc41a2f1833e2714880, type: 2}
+  - levelNumber: 11
+    sceneName: Level_11
+    displayTitle: "11 \u53CD\u8F6C"
+    levelDefinition: {fileID: 11400000, guid: fa3c924d61df31e4c87afd7bd70ec819, type: 2}
+  - levelNumber: 12
+    sceneName: Level_12
+    displayTitle: "12 \u53CD\u91CD\u529B"
+    levelDefinition: {fileID: 11400000, guid: 7b852fbaf58db9148b2a5a4f0a0ab8e8, type: 2}
+  - levelNumber: 13
+    sceneName: Level_13
+    displayTitle: "13 \u6C34\u57DF"
+    levelDefinition: {fileID: 11400000, guid: 5dc4207a36866c64182cfcb1c02baa36, type: 2}
+  - levelNumber: 14
+    sceneName: Level_14
+    displayTitle: "14 \u6DF1\u6C34\u9003\u751F"
+    levelDefinition: {fileID: 11400000, guid: bbd2469cfb4305a41ad6cac5e85c25bd, type: 2}
+  - levelNumber: 15
+    sceneName: Level_15
+    displayTitle: "15 \u5347\u964D"
+    levelDefinition: {fileID: 11400000, guid: efb799f5a9a901f47bcdd7bf54006a8d, type: 2}
+  - levelNumber: 16
+    sceneName: Level_16
+    displayTitle: "16 \u7D27\u6025\u5236\u52A8"
+    levelDefinition: {fileID: 11400000, guid: 8939b0e666f9a8b40916f3b6e2c19c52, type: 2}
+  - levelNumber: 17
+    sceneName: Level_17
+    displayTitle: "17 \u4E0B\u6F5C"
+    levelDefinition: {fileID: 11400000, guid: eebb1fd58b8fdbf41b2b6ba7541f8d85, type: 2}
+  - levelNumber: 18
+    sceneName: Level_18
+    displayTitle: "18 \u7F13\u51B2"
+    levelDefinition: {fileID: 11400000, guid: 4175d86b3b495c44cb90687825884f6e, type: 2}
+  - levelNumber: 19
+    sceneName: Level_19
+    displayTitle: "19 \u4F20\u9001\u95E82.0"
+    levelDefinition: {fileID: 11400000, guid: cf6efe602e6609b4bbf8286553497216, type: 2}
+  - levelNumber: 20
+    sceneName: Level_20
+    displayTitle: "20 \u66F2\u6298"
+    levelDefinition: {fileID: 11400000, guid: 98c2378b0e7c2014ab70db4cb0198826, type: 2}

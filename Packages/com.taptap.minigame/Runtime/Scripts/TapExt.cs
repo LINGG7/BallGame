@@ -1,0 +1,406 @@
+#if (UNITY_WEBGL || UNITY_MINIGAME || WEIXINMINIGAME) && !(UNITY_EDITOR && TAP_DEBUG_ENABLE)
+using System;
+
+namespace TapTapMiniGame
+{
+    public partial class Tap
+    {
+        public static void SetShareboardHidden(SetShareboardHiddenOption option)
+        {
+            TapExtManagerHandler.Instance.SetShareboardHidden(option);
+        }
+        
+        public static void ShowShareboard(ShowShareboardOption option)
+        {
+            TapExtManagerHandler.Instance.ShowShareboard(option);
+        }
+        
+        public static void OnShareMessage(OnShareOption option)
+        {
+            TapExtManagerHandler.Instance.OnShareMessage(option);
+        }
+
+        public static void OffShareMessage()
+        {
+            TapExtManagerHandler.Instance.OffShareMessage();
+        }
+
+        public static void OpenFriendList()
+        {
+            TapExtManagerHandler.Instance.OpenFriendList();
+        }
+        
+        public static void CreateHomeScreenWidget(CreateHomeScreenWidgetOption option)
+        {
+            TapExtManagerHandler.Instance.CreateHomeScreenWidget(option);
+        }
+        
+        public static void HasHomeScreenWidgetAndPinned(HasHomeScreenWidgetOption option)
+        {
+            TapExtManagerHandler.Instance.HasHomeScreenWidgetAndPinned(option);
+        }
+
+        public static void GetLeaderBoardManager()
+        {
+            TapExtManagerHandler.Instance.GetLeaderBoardManager();
+        }
+
+        public static void OpenLeaderboard(OpenLeaderboardOption option)
+        {
+            TapExtManagerHandler.Instance.OpenLeaderboard(option);
+        }
+
+        public static void SubmitScore(SubmitScoreOption option)
+        {
+            TapExtManagerHandler.Instance.SubmitScores(option);
+        }
+
+        public static void LoadLeaderboardScores(LoadLeaderboardScoresOption option)
+        {
+            TapExtManagerHandler.Instance.LoadLeaderboardScores(option);
+        }
+
+        public static void LoadCurrentPlayerLeaderboardScore(LoadCurrentPlayerLeaderboardScoreOption option)
+        {
+            TapExtManagerHandler.Instance.LoadCurrentPlayerLeaderboardScore(option);
+        }
+
+        public static void LoadPlayerCenteredScores(LoadPlayerCenteredScoresOption option)
+        {
+            TapExtManagerHandler.Instance.LoadPlayerCenteredScores(option);
+        }
+
+        /// <summary>
+        /// 发起道具直购支付请求。
+        /// </summary>
+        public static void RequestPaymentGameItem(RequestPaymentGameItemOption option)
+        {
+            TapExtManagerHandler.Instance.RequestPaymentGameItem(option);
+        }
+    }
+
+    public class TapAchievement {
+        public static void Setup(AchievementManagerOption option)
+        {
+            TapExtManagerHandler.Instance.SetupAchievementManager(option);
+        }
+        public static void RegisterCallBack(AchievementListener listener)
+        {
+            TapExtManagerHandler.Instance.AchievementManager_RegisterListener(listener);
+        }
+        public static void UnRegisterCallBack(AchievementListener listener)
+        {
+            TapExtManagerHandler.Instance.AchievementManager_UnregisterListener(listener);
+        }
+        public static void Unlock(string achievementId)
+        {
+            TapExtManagerHandler.Instance.AchievementManager_Unlock(achievementId);
+        }
+        public static void Increment(string achievementId, int steps)
+        {
+            TapExtManagerHandler.Instance.AchievementManager_IncrementSteps(achievementId, steps);
+        }
+        public static void ShowAchievements()
+        {
+            TapExtManagerHandler.Instance.AchievementManager_ShowAllAchievements();
+        }
+        public static void SetToastEnable(bool enabled)
+        {
+            TapExtManagerHandler.Instance.AchievementManager_SetToastEnabled(enabled);
+        }
+    }
+
+    /// <summary>
+    /// 云存档管理类
+    /// </summary>
+    public class TapCloudSave
+    {
+        /// <summary>
+        /// 初始化云存档管理器
+        /// </summary>
+        public static void Setup()
+        {
+            TapExtManagerHandler.Instance.CreateCloudSaveManager();
+        }
+
+        /// <summary>
+        /// 创建存档
+        /// </summary>
+        /// <param name="option">创建存档选项</param>
+        public static void CreateArchive(CreateArchiveOption option)
+        {
+            TapExtManagerHandler.Instance.CloudSaveManager_CreateArchive(option);
+        }
+
+        /// <summary>
+        /// 更新存档
+        /// </summary>
+        /// <param name="option">更新存档选项</param>
+        public static void UpdateArchive(UpdateArchiveOption option)
+        {
+            TapExtManagerHandler.Instance.CloudSaveManager_UpdateArchive(option);
+        }
+
+        /// <summary>
+        /// 获取存档列表
+        /// </summary>
+        /// <param name="option">获取存档列表选项</param>
+        public static void GetArchiveList(GetArchiveListOption option)
+        {
+            TapExtManagerHandler.Instance.CloudSaveManager_GetArchiveList(option);
+        }
+
+        /// <summary>
+        /// 获取存档数据
+        /// </summary>
+        /// <param name="option">获取存档数据选项</param>
+        public static void GetArchiveData(GetArchiveDataOption option)
+        {
+            TapExtManagerHandler.Instance.CloudSaveManager_GetArchiveData(option);
+        }
+
+        /// <summary>
+        /// 获取存档封面
+        /// </summary>
+        /// <param name="option">获取存档封面选项</param>
+        public static void GetArchiveCover(GetArchiveCoverOption option)
+        {
+            TapExtManagerHandler.Instance.CloudSaveManager_GetArchiveCover(option);
+        }
+
+        /// <summary>
+        /// 删除存档
+        /// </summary>
+        /// <param name="option">删除存档选项</param>
+        public static void DeleteArchive(DeleteArchiveOption option)
+        {
+            TapExtManagerHandler.Instance.CloudSaveManager_DeleteArchive(option);
+        }
+    }
+
+    /// <summary>
+    /// Tap多人联机客户端
+    /// </summary>
+    public class TapBattleClient
+    {
+        /// <summary>
+        /// 初始化多人联机SDK
+        /// 自动创建Manager实例
+        /// </summary>
+        /// <param name="eventHandler">事件处理器，需实现ITapBattleEventHandler接口</param>
+        public static void Initialize(ITapBattleEventHandler eventHandler)
+        {
+            TapExtManagerHandler.Instance.TapBattle_Initialize(eventHandler);
+        }
+
+        /// <summary>
+        /// 取消注册多人联机事件监听器
+        /// </summary>
+        public static void UnregisterListener()
+        {
+            TapExtManagerHandler.Instance.TapBattle_UnregisterListener();
+        }
+
+        /// <summary>
+        /// 终止化多人联机SDK
+        /// 自动销毁Manager实例
+        /// </summary>
+        public static void FinalizeSDK()
+        {
+            TapExtManagerHandler.Instance.TapBattle_Finalize();
+        }
+
+        // === 房间管理API ===
+
+        /// <summary>
+        /// 创建房间
+        /// </summary>
+        /// <param name="option">创建房间选项</param>
+        public static void CreateRoom(CreateRoomOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_CreateRoom(option);
+        }
+
+        /// <summary>
+        /// 匹配房间
+        /// </summary>
+        /// <param name="option">匹配房间选项</param>
+        public static void MatchRoom(MatchRoomOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_MatchRoom(option);
+        }
+
+        /// <summary>
+        /// 离开房间
+        /// </summary>
+        /// <param name="option">离开房间选项</param>
+        public static void LeaveRoom(LeaveRoomOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_LeaveRoom(option);
+        }
+
+        // === 玩家属性更新API ===
+
+        /// <summary>
+        /// 更新玩家自定义状态
+        /// </summary>
+        /// <param name="option">更新选项</param>
+        public static void UpdatePlayerCustomStatus(UpdatePlayerCustomStatusOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_UpdatePlayerCustomStatus(option);
+        }
+
+        /// <summary>
+        /// 更新玩家自定义属性
+        /// </summary>
+        /// <param name="option">更新选项</param>
+        public static void UpdatePlayerCustomProperties(UpdatePlayerCustomPropertiesOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_UpdatePlayerCustomProperties(option);
+        }
+
+        /// <summary>
+        /// 更新房间属性
+        /// </summary>
+        /// <param name="option">更新选项</param>
+        public static void UpdateRoomProperties(UpdateRoomPropertiesOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_UpdateRoomProperties(option);
+        }
+
+        // === 帧同步管理API ===
+
+        /// <summary>
+        /// 开始帧同步
+        /// </summary>
+        /// <param name="option">开始帧同步选项</param>
+        public static void StartFrameSync(StartFrameSyncOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_StartFrameSync(option);
+        }
+
+        /// <summary>
+        /// 发送帧同步输入
+        /// </summary>
+        /// <param name="option">发送帧同步输入选项</param>
+        public static void SendFrameInput(SendFrameInputOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_SendFrameInput(option);
+        }
+
+        /// <summary>
+        /// 停止帧同步
+        /// </summary>
+        /// <param name="option">停止帧同步选项</param>
+        public static void StopFrameSync(StopFrameSyncOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_StopFrameSync(option);
+        }
+
+        // === 随机数工具API ===
+
+        /// <summary>
+        /// 创建随机数生成器
+        /// </summary>
+        /// <param name="seed">随机数种子</param>
+        /// <returns>随机数生成器实例</returns>
+        public static RandomNumberGenerator NewRandomNumberGenerator(int seed)
+        {
+            int instanceId = TapExtManagerHandler.Instance.TapBattle_NewRandomNumberGenerator(seed);
+            return new RandomNumberGenerator(instanceId);
+        }
+
+        // === 连接管理API ===
+
+        /// <summary>
+        /// 连接多人联机服务
+        /// </summary>
+        /// <param name="option">连接选项</param>
+        public static void Connect(BattleConnectOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_Connect(option);
+        }
+
+        /// <summary>
+        /// 断开多人联机服务连接
+        /// </summary>
+        /// <param name="option">断开连接选项</param>
+        public static void Disconnect(BattleOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_Disconnect(option);
+        }
+
+        // === 新增API ===
+
+        /// <summary>
+        /// 获取房间列表
+        /// </summary>
+        /// <param name="option">获取房间列表选项</param>
+        public static void GetRoomList(GetRoomListOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_GetRoomList(option);
+        }
+
+        /// <summary>
+        /// 加入指定房间
+        /// </summary>
+        /// <param name="option">加入房间选项</param>
+        public static void JoinRoom(JoinRoomOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_JoinRoom(option);
+        }
+
+        /// <summary>
+        /// 踢玩家出房间
+        /// 仅限房主调用，且帧同步未开始时才能使用
+        /// </summary>
+        /// <param name="option">踢玩家选项</param>
+        public static void KickRoomPlayer(KickRoomPlayerOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_KickRoomPlayer(option);
+        }
+
+        /// <summary>
+        /// 发送自定义消息
+        /// </summary>
+        /// <param name="option">发送自定义消息选项</param>
+        public static void SendCustomMessage(SendCustomMessageOption option)
+        {
+            TapExtManagerHandler.Instance.TapBattle_SendCustomMessage(option);
+        }
+    }
+    
+    public class RandomNumberGenerator
+    {
+        private readonly int instanceId;
+        private bool isFreed = false;
+        
+        internal RandomNumberGenerator(int instanceId)
+        {
+            this.instanceId = instanceId;
+        }
+        
+        public int RandomInt()
+        {
+            if (isFreed)
+            {
+                throw new InvalidOperationException("RandomNumberGenerator has been freed");
+            }
+            
+            return TapExtManagerHandler.Instance.TapBattle_RandomInt(instanceId);
+        }
+        
+        public void Free()
+        {
+            if (isFreed)
+            {
+                return; // 已经释放过了，避免重复释放
+            }
+            
+            TapExtManagerHandler.Instance.TapBattle_FreeRandomNumberGenerator(instanceId);
+            isFreed = true;
+        }
+    }
+}
+
+#endif

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5366fc836212da84c8065c6d87dcecc7, type: 3}
+  m_Name: Spring
+  m_EditorClassIdentifier: 
+  displayName: "\u5F39\u7C27"
+  prefab: {fileID: 1112845811365615000, guid: dc01d0e6c4891bf4baf8aca026747791, type: 3}
+  inventoryButtonPrefab: {fileID: 4889453285248847547, guid: ff9f2084581be0d4ea762c029f4ec630, type: 3}
+  icon: {fileID: 21300000, guid: c12120acc92b256488e0ff1301ccce98, type: 3}
+  iconColor: {r: 0.5368559, g: 1, b: 0.5330188, a: 1}
+  defaultCount: 1
+  cost: 300
+  canRotate: 1
+  rotationStep: 15
+  placementRadius: 0.75

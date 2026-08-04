@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b8a8999e767bf94191264ce44bd7e28, type: 3}
+  m_Name: 06_Repulsive
+  m_EditorClassIdentifier: 
+  levelTitle: "06 \u6392\u65A5\u529B"
+  mode: 0
+  toolCatalog: {fileID: 11400000, guid: 7ba9939ce0a349af9384c351f8ab9103, type: 2}
+  tools:
+  - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
+    count: 3

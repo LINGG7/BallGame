@@ -1,0 +1,25 @@
+{
+    "name": "TapMiniGameTools.Debug",
+    "rootNamespace": "",
+    "references": [
+        "taptap.runtime",
+        "TapExtManagerHandler",
+        "TapExtWrapper",
+        "TapTapMiniGame",
+        "TapMiniGameTools.DevTools"
+    ],
+    "includePlatforms": [
+    ],
+    "excludePlatforms": [
+        "Android"
+    ],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "LitJson.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+} 

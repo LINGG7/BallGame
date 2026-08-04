@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5366fc836212da84c8065c6d87dcecc7, type: 3}
+  m_Name: Magnet
+  m_EditorClassIdentifier: 
+  displayName: Magnet
+  prefab: {fileID: 7690111893215459947, guid: ae12a9cc09ebae647a8e646374a0aa7d, type: 3}
+  inventoryButtonPrefab: {fileID: 4889453285248847547, guid: ff9f2084581be0d4ea762c029f4ec630, type: 3}
+  icon: {fileID: 21300000, guid: 59d1ea48589720c4a89bc8aef8e3d4f6, type: 3}
+  iconColor: {r: 0.95, g: 0.15, b: 0.75, a: 1}
+  defaultCount: 1
+  cost: 1
+  canRotate: 0
+  rotationStep: 15
+  placementRadius: 0.75

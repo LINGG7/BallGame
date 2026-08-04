@@ -1,0 +1,22 @@
+{
+    "name": "taptap.runtime",
+    "rootNamespace": "",
+    "references": [
+        "TapExtManagerHandler",
+        "TapExtWrapper"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [
+        "Android"
+    ],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "MiniHost.LitJson.dll",
+        "Unity.MiniHos.FontABTool.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
