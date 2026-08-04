@@ -490,15 +490,31 @@ namespace BallGame.Tools
             {
                 waterRenderer.transform.localPosition = Vector3.zero;
                 waterRenderer.transform.localRotation = Quaternion.identity;
-                waterRenderer.transform.localScale = new Vector3(size.x, size.y, 1f);
+                waterRenderer.transform.localScale = CalculateSpriteScale(waterRenderer, size.x, size.y);
             }
 
             if (surfaceLine != null)
             {
                 surfaceLine.localPosition = new Vector3(0f, size.y * 0.5f, -0.01f);
                 surfaceLine.localRotation = Quaternion.identity;
-                surfaceLine.localScale = new Vector3(size.x, 0.18f, 1f);
+                surfaceLine.localScale = CalculateSpriteScale(
+                    surfaceLine.GetComponent<SpriteRenderer>(),
+                    size.x,
+                    0.18f);
             }
+        }
+
+        private static Vector3 CalculateSpriteScale(SpriteRenderer renderer, float targetWidth, float targetHeight)
+        {
+            if (renderer == null || renderer.sprite == null)
+            {
+                return new Vector3(targetWidth, targetHeight, 1f);
+            }
+
+            Vector2 spriteSize = renderer.sprite.bounds.size;
+            float scaleX = spriteSize.x > Mathf.Epsilon ? targetWidth / spriteSize.x : targetWidth;
+            float scaleY = spriteSize.y > Mathf.Epsilon ? targetHeight / spriteSize.y : targetHeight;
+            return new Vector3(scaleX, scaleY, 1f);
         }
 
         private void OnDrawGizmosSelected()
