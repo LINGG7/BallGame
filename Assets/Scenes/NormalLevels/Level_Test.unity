@@ -666,10 +666,12 @@ MonoBehaviour:
   resetButton: {fileID: 406293076}
   editButton: {fileID: 406293075}
   nextButton: {fileID: 406293074}
+  returnButton: {fileID: 0}
   level: {fileID: 11400000, guid: 1a51d33715ed67d478a20727bbbe9372, type: 2}
   nextSceneName: 
   failY: -8
   simulationTimeout: 25
+  failureResetDelay: 2
   requiredGoalBallCount: 1
   allowBallCollision: 1
 --- !u!114 &1029758280

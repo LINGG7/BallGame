@@ -241,7 +241,7 @@ EdgeCollider2D:
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
-  m_EdgeRadius: 0.25
+  m_EdgeRadius: 0.2
   m_Points:
   - {x: 1.66, y: -3.06}
   - {x: 1.58636, y: -2.961943}
@@ -379,7 +379,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colliderMode: 1
   splineIndex: 0
-  width: 0.5
+  width: 0.4
   samplesPerUnit: 8
   minSamples: 8
   maxSamples: 256
@@ -396,7 +396,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   splineIndex: 0
-  width: 0.5
+  width: 0.4
   samplesPerUnit: 8
   minSamples: 8
   maxSamples: 256

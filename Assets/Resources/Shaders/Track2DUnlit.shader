@@ -19,13 +19,15 @@ Shader "BallGame/Track 2D Unlit"
     {
         Tags
         {
-            "RenderType" = "Opaque"
+            "Queue" = "Transparent"
+            "RenderType" = "Transparent"
             "PreviewType" = "Plane"
         }
 
         Cull Off
         Lighting Off
-        ZWrite On
+        ZWrite Off
+        Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
         {
