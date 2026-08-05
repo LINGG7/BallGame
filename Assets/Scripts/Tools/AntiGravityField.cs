@@ -116,7 +116,17 @@ namespace BallGame.Tools
             rangeHintRenderer.enabled = showRangeHint;
             rangeHintRenderer.transform.localPosition = Vector3.zero;
             rangeHintRenderer.transform.localRotation = Quaternion.identity;
-            rangeHintRenderer.transform.localScale = new Vector3(size.x, size.y, 1f);
+            Sprite sprite = rangeHintRenderer.sprite;
+            if (sprite == null)
+            {
+                rangeHintRenderer.transform.localScale = new Vector3(size.x, size.y, 1f);
+                return;
+            }
+
+            Vector2 spriteSize = sprite.bounds.size;
+            float scaleX = spriteSize.x > Mathf.Epsilon ? size.x / spriteSize.x : size.x;
+            float scaleY = spriteSize.y > Mathf.Epsilon ? size.y / spriteSize.y : size.y;
+            rangeHintRenderer.transform.localScale = new Vector3(scaleX, scaleY, 1f);
         }
     }
 }

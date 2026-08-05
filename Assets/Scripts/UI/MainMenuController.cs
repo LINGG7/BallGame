@@ -446,7 +446,7 @@ namespace BallGame.UI
                     {
                         bestCostLabel.text = LowestCostProgress.TryGetBestCost(level.SceneName, out int bestCost)
                             ? "历史最低：" + bestCost.ToString()
-                            : "历史最低：未挑战";
+                            : "历史最低：--";
                     }
                 }
 
