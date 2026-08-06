@@ -209,7 +209,6 @@ MonoBehaviour:
   mapBounds: {fileID: 1711294214}
   followDeadZone: {x: 1.8, y: 1.1}
   followSmoothTime: 0.15
-  buildPanSmoothTime: 0.08
   minOrthographicSize: 3
   maxOrthographicSize: 5
   mouseZoomSpeed: 1
@@ -1301,7 +1300,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   center: {x: 0, y: 0}
-  size: {x: 20, y: 15}
+  size: {x: 30, y: 15}
 --- !u!4 &1711294215
 Transform:
   m_ObjectHideFlags: 0

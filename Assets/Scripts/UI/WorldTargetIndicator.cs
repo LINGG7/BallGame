@@ -148,12 +148,6 @@ namespace BallGame.UI
                 return false;
             }
 
-            if (TryGetTargetBounds(out Bounds bounds))
-            {
-                Plane[] planes = GeometryUtility.CalculateFrustumPlanes(worldCamera);
-                return GeometryUtility.TestPlanesAABB(planes, bounds);
-            }
-
             Vector3 viewport = worldCamera.WorldToViewportPoint(target.position);
             return viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f;
         }

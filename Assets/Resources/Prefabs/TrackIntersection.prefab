@@ -377,6 +377,10 @@ PrefabInstance:
       value: Lower
       objectReference: {fileID: 0}
     - target: {fileID: 7044302847466759301, guid: c3791f5e1b240d049b70ce9a57594bec, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7044302847466759301, guid: c3791f5e1b240d049b70ce9a57594bec, type: 3}
       propertyPath: m_Points.Array.size
       value: 53
       objectReference: {fileID: 0}

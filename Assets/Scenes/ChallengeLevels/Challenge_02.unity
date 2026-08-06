@@ -266,7 +266,6 @@ MonoBehaviour:
   mapBounds: {fileID: 1711294214}
   followDeadZone: {x: 1.8, y: 1.1}
   followSmoothTime: 0.15
-  buildPanSmoothTime: 0.08
   minOrthographicSize: 3
   maxOrthographicSize: 5
   mouseZoomSpeed: 1
@@ -938,7 +937,7 @@ MonoBehaviour:
   editButton: {fileID: 406293075}
   nextButton: {fileID: 406293074}
   returnButton: {fileID: 0}
-  level: {fileID: 11400000, guid: d845e017a0b645f44849b25a824a00e5, type: 2}
+  level: {fileID: 11400000, guid: 39fe0bd8c22695b4ab866451ad576c0b, type: 2}
   nextSceneName: Challenge_03
   failY: -8
   simulationTimeout: 25
