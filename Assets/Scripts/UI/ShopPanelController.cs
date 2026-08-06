@@ -1,420 +1,452 @@
+using System.Collections;
 using System.Collections.Generic;
 using BallGame.Shop;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace BallGame.UI
 {
-	public sealed class ShopPanelController : MonoBehaviour
-	{
-		private const string ShopModalResourcePath = "UI/ShopModal";
+    public sealed class ShopPanelController : MonoBehaviour
+    {
+        private const string ShopModalResourcePath = "UI/ShopModal";
+        private static readonly Color CardNormal = new Color(0.98f, 0.96f, 0.90f, 1f);
+        private static readonly Color CardSelected = new Color(1f, 0.86f, 0.50f, 1f);
 
-		private Button shopButton;
+        private Button shopButton;
+        private GameObject modalRoot;
+        private Transform cardArea;
+        private ScrollRect cardScrollRect;
+        private RectTransform cardContent;
+        private Button cardTemplate;
+        private Button previousPageButton;
+        private Button nextPageButton;
+        private Image selectedPreview;
+        private TMP_Text selectedPreviewName;
+        private TMP_Text selectedState;
+        private Button actionButton;
+        private TMP_Text actionLabel;
+        private TMP_Text statusText;
 
-		private GameObject modalRoot;
+        private readonly List<Button> cardButtons = new List<Button>();
+        private readonly List<TMP_Text> cardStates = new List<TMP_Text>();
+        private readonly List<int> cardSkinIndices = new List<int>();
+        private int selectedIndex;
+        private int currentPage;
+        private int pageCount;
+        private bool pageAnimating;
+        private bool pageDragging;
+        private float dragStartContentX;
+        private Coroutine pageAnimationCoroutine;
 
-		private Button recommendedTab;
+        private const int CardsPerPage = 4;
+        private const float PageAnimationDuration = 0.2f;
+        private const float SwipeThreshold = 188f;
 
-		private Button skinsTab;
+        public bool IsOpen => modalRoot != null && modalRoot.activeSelf;
 
-		private Transform cardArea;
+        private void Awake()
+        {
+            ResolveEntryAndModal();
+            Hide();
+        }
 
-		private Image selectedPreview;
+        public void Show()
+        {
+            ResolveEntryAndModal();
+            if (modalRoot == null)
+                return;
 
-		private TMP_Text selectedPreviewName;
+            if (pageAnimating)
+            {
+                StopPageAnimation();
+                pageAnimating = false;
+            }
+            selectedIndex = FindCurrentIndex();
+            currentPage = selectedIndex / CardsPerPage;
+            Refresh();
+            modalRoot.SetActive(true);
+            modalRoot.transform.SetAsLastSibling();
+            Canvas.ForceUpdateCanvases();
+            SetPageImmediate(currentPage);
+        }
 
-		private TMP_Text selectedState;
+        public void Hide()
+        {
+            if (modalRoot != null)
+                modalRoot.SetActive(false);
+        }
 
-		private Button actionButton;
+        private void ResolveEntryAndModal()
+        {
+            if (shopButton == null)
+            {
+                Transform entry = transform.Find("ShopButton");
+                shopButton = entry != null ? entry.GetComponent<Button>() : null;
+                if (shopButton != null)
+                {
+                    shopButton.onClick.RemoveListener(Show);
+                    shopButton.onClick.AddListener(Show);
+                }
+            }
 
-		private TMP_Text actionLabel;
+            if (modalRoot != null)
+                return;
 
-		private TMP_Text statusText;
+            GameObject modalPrefab = Resources.Load<GameObject>(ShopModalResourcePath);
+            if (modalPrefab == null)
+            {
+                Debug.LogWarning("Missing shop modal prefab: " + ShopModalResourcePath, this);
+                return;
+            }
 
-		private Button cardTemplate;
+            modalRoot = Instantiate(modalPrefab, transform);
+            modalRoot.name = "ShopModal";
+            Stretch(modalRoot.GetComponent<RectTransform>());
 
-		private readonly List<Button> cardButtons = new List<Button>();
+            Button backdrop = modalRoot.GetComponent<Button>();
+            if (backdrop != null)
+                backdrop.onClick.AddListener(Hide);
 
-		private readonly List<GameObject> cardRoots = new List<GameObject>();
+            Transform panel = modalRoot.transform.Find("Panel");
+            BindCloseButton(panel);
 
-		private int selectedIndex;
+            cardArea = panel != null ? panel.Find("Content/CardArea") : null;
+            if (cardArea == null && panel != null)
+                cardArea = panel.Find("CardArea");
 
-		private bool recommendedOnly = true;
+            cardScrollRect = cardArea != null ? cardArea.GetComponent<ScrollRect>() : null;
+            cardContent = cardArea != null ? cardArea.Find("CardContent")?.GetComponent<RectTransform>() : null;
+            BindCardDragEvents();
+            cardTemplate = cardContent != null
+                ? cardContent.Find("CardTemplate")?.GetComponent<Button>()
+                : null;
+            if (cardTemplate == null && panel != null)
+                cardTemplate = panel.Find("CardTemplate")?.GetComponent<Button>();
 
-		public bool IsOpen => (UnityEngine.Object)(object)modalRoot != (UnityEngine.Object)null && modalRoot.activeSelf;
+            previousPageButton = panel != null ? panel.Find("Content/PrevPageButton")?.GetComponent<Button>() : null;
+            nextPageButton = panel != null ? panel.Find("Content/NextPageButton")?.GetComponent<Button>() : null;
+            if (previousPageButton != null)
+                previousPageButton.onClick.AddListener(() => NavigatePage(-1));
+            if (nextPageButton != null)
+                nextPageButton.onClick.AddListener(() => NavigatePage(1));
 
-		private void Awake()
-		{
-			ResolveEntryAndModal();
-			Hide();
-		}
+            Transform detail = panel != null ? panel.Find("SkinDetail") : null;
+            selectedPreview = detail != null ? detail.Find("DetailPreview")?.GetComponent<Image>() : null;
+            selectedPreviewName = detail != null ? detail.Find("SelectedName")?.GetComponent<TMP_Text>() : null;
+            selectedState = detail != null ? detail.Find("SelectedState")?.GetComponent<TMP_Text>() : null;
+            actionButton = detail != null ? detail.Find("ActionButton")?.GetComponent<Button>() : null;
+            actionLabel = actionButton != null ? actionButton.GetComponentInChildren<TMP_Text>(true) : null;
+            statusText = detail != null ? detail.Find("Status")?.GetComponent<TMP_Text>() : null;
 
-		public void Show()
-		{
-			ResolveEntryAndModal();
-			if (!((UnityEngine.Object)(object)modalRoot == (UnityEngine.Object)null))
-			{
-				selectedIndex = FindCurrentIndex();
-				recommendedOnly = true;
-				Refresh();
-				modalRoot.SetActive(true);
-				modalRoot.transform.SetAsLastSibling();
-			}
-		}
+            if (actionButton != null)
+                actionButton.onClick.AddListener(ActivateSelected);
 
-		public void Hide()
-		{
-			if ((UnityEngine.Object)(object)modalRoot != (UnityEngine.Object)null)
-			{
-				modalRoot.SetActive(false);
-			}
-		}
+            BuildCards();
+            modalRoot.SetActive(false);
+        }
 
-		private void ResolveEntryAndModal()
-		{
-			//IL_0115: Unknown result type (might be due to invalid IL or missing references)
-			//IL_011f: Expected O, but got Unknown
-			//IL_0059: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0063: Expected O, but got Unknown
-			//IL_0076: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0080: Expected O, but got Unknown
-			//IL_0163: Unknown result type (might be due to invalid IL or missing references)
-			//IL_016d: Expected O, but got Unknown
-			//IL_02e0: Unknown result type (might be due to invalid IL or missing references)
-			//IL_02ea: Expected O, but got Unknown
-			//IL_0303: Unknown result type (might be due to invalid IL or missing references)
-			//IL_030d: Expected O, but got Unknown
-			//IL_0326: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0330: Expected O, but got Unknown
-			if ((UnityEngine.Object)(object)shopButton == (UnityEngine.Object)null)
-			{
-				Transform obj = ((Component)this).transform.Find("ShopButton");
-				shopButton = ((obj != null) ? ((Component)obj).GetComponent<Button>() : null);
-				if ((UnityEngine.Object)(object)shopButton != (UnityEngine.Object)null)
-				{
-					((UnityEvent)shopButton.onClick).RemoveListener(new UnityAction(Show));
-					((UnityEvent)shopButton.onClick).AddListener(new UnityAction(Show));
-				}
-			}
-			if ((UnityEngine.Object)(object)modalRoot != (UnityEngine.Object)null)
-			{
-				return;
-			}
-			GameObject val = Resources.Load<GameObject>("UI/ShopModal");
-			if ((UnityEngine.Object)(object)val == (UnityEngine.Object)null)
-			{
-				Debug.LogWarning((object)"Missing shop modal prefab: UI/ShopModal", (UnityEngine.Object)(object)this);
-				return;
-			}
-			modalRoot = UnityEngine.Object.Instantiate<GameObject>(val, ((Component)this).transform);
-			((UnityEngine.Object)modalRoot).name = "ShopModal";
-			Stretch(modalRoot.GetComponent<RectTransform>());
-			Button component = modalRoot.GetComponent<Button>();
-			if (component != null)
-			{
-				((UnityEvent)component.onClick).AddListener(new UnityAction(Hide));
-			}
-			Transform val2 = modalRoot.transform.Find("Panel");
-			if (val2 != null)
-			{
-				Transform obj2 = val2.Find("BackButton");
-				if (obj2 != null)
-				{
-					Button component2 = ((Component)obj2).GetComponent<Button>();
-					if (component2 != null)
-					{
-						((UnityEvent)component2.onClick).AddListener(new UnityAction(Hide));
-					}
-				}
-			}
-			object obj3;
-			if (val2 == null)
-			{
-				obj3 = null;
-			}
-			else
-			{
-				Transform obj4 = val2.Find("CategorySidebar/RecommendedTab");
-				obj3 = ((obj4 != null) ? ((Component)obj4).GetComponent<Button>() : null);
-			}
-			recommendedTab = (Button)obj3;
-			object obj5;
-			if (val2 == null)
-			{
-				obj5 = null;
-			}
-			else
-			{
-				Transform obj6 = val2.Find("CategorySidebar/SkinsTab");
-				obj5 = ((obj6 != null) ? ((Component)obj6).GetComponent<Button>() : null);
-			}
-			skinsTab = (Button)obj5;
-			cardArea = ((val2 != null) ? val2.Find("CardArea") : null);
-			object obj7;
-			if (val2 == null)
-			{
-				obj7 = null;
-			}
-			else
-			{
-				Transform obj8 = val2.Find("CardTemplate");
-				obj7 = ((obj8 != null) ? ((Component)obj8).GetComponent<Button>() : null);
-			}
-			cardTemplate = (Button)obj7;
-			Transform val3 = ((val2 != null) ? val2.Find("SkinDetail") : null);
-			object obj9;
-			if (val3 == null)
-			{
-				obj9 = null;
-			}
-			else
-			{
-				Transform obj10 = val3.Find("DetailPreview");
-				obj9 = ((obj10 != null) ? ((Component)obj10).GetComponent<Image>() : null);
-			}
-			selectedPreview = (Image)obj9;
-			object obj11;
-			if (val3 == null)
-			{
-				obj11 = null;
-			}
-			else
-			{
-				Transform obj12 = val3.Find("SelectedName");
-				obj11 = ((obj12 != null) ? ((Component)obj12).GetComponent<TMP_Text>() : null);
-			}
-			selectedPreviewName = (TMP_Text)obj11;
-			object obj13;
-			if (val3 == null)
-			{
-				obj13 = null;
-			}
-			else
-			{
-				Transform obj14 = val3.Find("SelectedState");
-				obj13 = ((obj14 != null) ? ((Component)obj14).GetComponent<TMP_Text>() : null);
-			}
-			selectedState = (TMP_Text)obj13;
-			object obj15;
-			if (val3 == null)
-			{
-				obj15 = null;
-			}
-			else
-			{
-				Transform obj16 = val3.Find("ActionButton");
-				obj15 = ((obj16 != null) ? ((Component)obj16).GetComponent<Button>() : null);
-			}
-			actionButton = (Button)obj15;
-			Button obj17 = actionButton;
-			actionLabel = ((obj17 != null) ? ((Component)obj17).GetComponentInChildren<TMP_Text>(true) : null);
-			object obj18;
-			if (val3 == null)
-			{
-				obj18 = null;
-			}
-			else
-			{
-				Transform obj19 = val3.Find("Status");
-				obj18 = ((obj19 != null) ? ((Component)obj19).GetComponent<TMP_Text>() : null);
-			}
-			statusText = (TMP_Text)obj18;
-			Button obj20 = recommendedTab;
-			if (obj20 != null)
-			{
-				((UnityEvent)obj20.onClick).AddListener((UnityAction)delegate
-				{
-					recommendedOnly = true;
-					Refresh();
-				});
-			}
-			Button obj21 = skinsTab;
-			if (obj21 != null)
-			{
-				((UnityEvent)obj21.onClick).AddListener((UnityAction)delegate
-				{
-					recommendedOnly = false;
-					Refresh();
-				});
-			}
-			Button obj22 = actionButton;
-			if (obj22 != null)
-			{
-				((UnityEvent)obj22.onClick).AddListener(new UnityAction(ActivateSelected));
-			}
-			BuildCards();
-			modalRoot.SetActive(false);
-		}
+        private void BindCloseButton(Transform panel)
+        {
+            Button backButton = panel != null ? panel.Find("BackButton")?.GetComponent<Button>() : null;
+            if (backButton != null)
+                backButton.onClick.AddListener(Hide);
+        }
 
-		private void BuildCards()
-		{
-			//IL_00c5: Unknown result type (might be due to invalid IL or missing references)
-			//IL_00d4: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0196: Unknown result type (might be due to invalid IL or missing references)
-			//IL_01a0: Expected O, but got Unknown
-			if ((UnityEngine.Object)(object)cardArea == (UnityEngine.Object)null || (UnityEngine.Object)(object)cardTemplate == (UnityEngine.Object)null || (UnityEngine.Object)(object)BallSkinService.Catalog == (UnityEngine.Object)null)
-			{
-				return;
-			}
-			((Component)cardTemplate).gameObject.SetActive(false);
-			for (int i = 0; i < BallSkinService.Catalog.Skins.Count; i++)
-			{
-				BallSkinEntry ballSkinEntry = BallSkinService.Catalog.Skins[i];
-				Button val = UnityEngine.Object.Instantiate<Button>(cardTemplate, cardArea);
-				((UnityEngine.Object)val).name = "SkinCard_" + ballSkinEntry.id;
-				((Component)val).gameObject.SetActive(true);
-				int num = i % 3;
-				SetRect(((Component)val).GetComponent<RectTransform>(), new Vector2(-265f + (float)num * 265f, 0f), new Vector2(235f, 300f));
-				Transform obj = ((Component)val).transform.Find("Name");
-				TMP_Text val2 = ((obj != null) ? ((Component)obj).GetComponent<TMP_Text>() : null);
-				Transform obj2 = ((Component)val).transform.Find("State");
-				TMP_Text val3 = ((obj2 != null) ? ((Component)obj2).GetComponent<TMP_Text>() : null);
-				Transform obj3 = ((Component)val).transform.Find("Preview");
-				Image val4 = ((obj3 != null) ? ((Component)obj3).GetComponent<Image>() : null);
-				if ((UnityEngine.Object)(object)val2 != (UnityEngine.Object)null)
-				{
-					val2.text = ballSkinEntry.displayName;
-				}
-				if ((UnityEngine.Object)(object)val4 != (UnityEngine.Object)null)
-				{
-					val4.sprite = ballSkinEntry.previewSprite;
-				}
-				int captured = i;
-				((UnityEventBase)val.onClick).RemoveAllListeners();
-				((UnityEvent)val.onClick).AddListener((UnityAction)delegate
-				{
-					SelectCard(captured);
-				});
-				cardButtons.Add(val);
-				cardRoots.Add(((Component)val).gameObject);
-			}
-		}
+        private void BuildCards()
+        {
+            BallSkinCatalog catalog = BallSkinService.Catalog;
+            if (cardArea == null || cardTemplate == null || catalog == null)
+                return;
 
-		private void SelectCard(int index)
-		{
-			selectedIndex = index;
-			if ((UnityEngine.Object)(object)statusText != (UnityEngine.Object)null)
-			{
-				statusText.text = string.Empty;
-			}
-			Refresh();
-		}
+            cardTemplate.gameObject.SetActive(false);
+            cardButtons.Clear();
+            cardStates.Clear();
+            cardSkinIndices.Clear();
+            for (int i = 0; i < catalog.Skins.Count; i++)
+            {
+                BallSkinEntry skin = catalog.Skins[i];
+                if (skin == null)
+                    continue;
 
-		private void ActivateSelected()
-		{
-			if ((UnityEngine.Object)(object)BallSkinService.Catalog == (UnityEngine.Object)null || selectedIndex < 0 || selectedIndex >= BallSkinService.Catalog.Skins.Count)
-			{
-				return;
-			}
-			BallSkinEntry ballSkinEntry = BallSkinService.Catalog.Skins[selectedIndex];
-			if (!BallSkinService.IsUnlocked(ballSkinEntry.id))
-			{
-				statusText.text = "正在准备解锁…";
-				BallSkinService.TryUnlock(ballSkinEntry.id, delegate(bool success)
-				{
-					statusText.text = (success ? "皮肤已解锁，可以装备" : "暂未解锁");
-					Refresh();
-				});
-			}
-			else
-			{
-				bool flag = BallSkinService.EquipSkin(ballSkinEntry.id);
-				statusText.text = (flag ? ("已装备：" + ballSkinEntry.displayName) : "该皮肤尚未解锁");
-				Refresh();
-			}
-		}
+                Button card = Instantiate(cardTemplate, cardContent != null ? cardContent : cardArea);
+                card.name = "SkinCard_" + skin.id;
+                card.gameObject.SetActive(true);
 
-		private void Refresh()
-		{
-			if ((UnityEngine.Object)(object)BallSkinService.Catalog == (UnityEngine.Object)null || BallSkinService.Catalog.Skins.Count == 0)
-			{
-				return;
-			}
-			string currentSkinId = BallSkinService.CurrentSkinId;
-			for (int i = 0; i < cardButtons.Count; i++)
-			{
-				BallSkinEntry ballSkinEntry = BallSkinService.Catalog.Skins[i];
-				cardRoots[i].SetActive(!recommendedOnly || ballSkinEntry.featured);
-				Transform obj = cardRoots[i].transform.Find("State");
-				TMP_Text val = ((obj != null) ? ((Component)obj).GetComponent<TMP_Text>() : null);
-				if ((UnityEngine.Object)(object)val != (UnityEngine.Object)null)
-				{
-					val.text = ((currentSkinId == ballSkinEntry.id) ? "已装备" : ((!BallSkinService.IsUnlocked(ballSkinEntry.id)) ? "尚未解锁" : ((selectedIndex == i) ? "已选中" : "已拥有")));
-				}
-			}
-			BallSkinEntry ballSkinEntry2 = BallSkinService.Catalog.Skins[Mathf.Clamp(selectedIndex, 0, BallSkinService.Catalog.Skins.Count - 1)];
-			selectedPreview.sprite = ballSkinEntry2.previewSprite;
-			selectedPreviewName.text = ballSkinEntry2.displayName;
-			bool flag = BallSkinService.IsUnlocked(ballSkinEntry2.id);
-			selectedState.text = ((currentSkinId == ballSkinEntry2.id) ? "当前装备" : (flag ? "已拥有，可装备" : "尚未解锁"));
-			((Selectable)actionButton).interactable = currentSkinId != ballSkinEntry2.id;
-			actionLabel.text = ((currentSkinId == ballSkinEntry2.id) ? "已装备" : (flag ? "装备" : ((BallSkinService.RewardedAdService == null) ? "解锁" : "观看广告解锁")));
-			SetTabColors(recommendedTab, recommendedOnly);
-			SetTabColors(skinsTab, !recommendedOnly);
-		}
+                TMP_Text nameLabel = card.transform.Find("Name")?.GetComponent<TMP_Text>();
+                TMP_Text stateLabel = card.transform.Find("State")?.GetComponent<TMP_Text>();
+                Image preview = card.transform.Find("Preview")?.GetComponent<Image>();
+                if (nameLabel != null)
+                    nameLabel.text = skin.displayName;
+                if (preview != null)
+                {
+                    preview.sprite = skin.previewSprite;
+                    preview.enabled = skin.previewSprite != null;
+                }
 
-		private int FindCurrentIndex()
-		{
-			if ((UnityEngine.Object)(object)BallSkinService.Catalog == (UnityEngine.Object)null)
-			{
-				return 0;
-			}
-			for (int i = 0; i < BallSkinService.Catalog.Skins.Count; i++)
-			{
-				if (BallSkinService.Catalog.Skins[i].id == BallSkinService.CurrentSkinId)
-				{
-					return i;
-				}
-			}
-			return 0;
-		}
+                int capturedIndex = i;
+                card.onClick.RemoveAllListeners();
+                card.onClick.AddListener(() => SelectCard(capturedIndex));
+                cardButtons.Add(card);
+                cardStates.Add(stateLabel);
+                cardSkinIndices.Add(i);
+            }
 
-		private static void SetTabColors(Button button, bool selected)
-		{
-			//IL_000f: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0014: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0049: Unknown result type (might be due to invalid IL or missing references)
-			//IL_002e: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0055: Unknown result type (might be due to invalid IL or missing references)
-			if (!((UnityEngine.Object)(object)button == (UnityEngine.Object)null))
-			{
-				ColorBlock colors = ((Selectable)button).colors;
-				colors.normalColor = (selected ? new Color(1f, 0.82f, 0.42f, 1f) : new Color(0.87f, 0.81f, 0.69f, 1f));
-				((Selectable)button).colors = colors;
-			}
-		}
+            pageCount = CalculatePageCount(cardButtons.Count);
+            if (cardContent != null && cardArea != null)
+            {
+                float viewportWidth = cardArea.GetComponent<RectTransform>().rect.width;
+                cardContent.sizeDelta = new Vector2(viewportWidth * pageCount, cardContent.sizeDelta.y);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(cardContent);
+            }
+        }
 
-		private static void SetRect(RectTransform rect, Vector2 position, Vector2 size)
-		{
-			//IL_0015: Unknown result type (might be due to invalid IL or missing references)
-			//IL_001c: Unknown result type (might be due to invalid IL or missing references)
-			//IL_001d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_001e: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0025: Unknown result type (might be due to invalid IL or missing references)
-			//IL_002d: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0035: Unknown result type (might be due to invalid IL or missing references)
-			Vector2 val = new Vector2(0.5f, 0.5f);
-			rect.pivot = val;
-			Vector2 anchorMin = (rect.anchorMax = val);
-			rect.anchorMin = anchorMin;
-			rect.anchoredPosition = position;
-			rect.sizeDelta = size;
-		}
+        private void SelectCard(int index)
+        {
+            selectedIndex = index;
+            if (statusText != null)
+                statusText.text = string.Empty;
+            Refresh();
+        }
 
-		private static void Stretch(RectTransform rect)
-		{
-			//IL_0002: Unknown result type (might be due to invalid IL or missing references)
-			//IL_000e: Unknown result type (might be due to invalid IL or missing references)
-			//IL_001b: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0020: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0021: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0028: Unknown result type (might be due to invalid IL or missing references)
-			rect.anchorMin = Vector2.zero;
-			rect.anchorMax = Vector2.one;
-			Vector2 offsetMin = (rect.offsetMax = Vector2.zero);
-			rect.offsetMin = offsetMin;
-		}
-	}
+        private void ActivateSelected()
+        {
+            BallSkinCatalog catalog = BallSkinService.Catalog;
+            if (catalog == null || selectedIndex < 0 || selectedIndex >= catalog.Skins.Count)
+                return;
+
+            BallSkinEntry skin = catalog.Skins[selectedIndex];
+            if (!BallSkinService.IsUnlocked(skin.id))
+            {
+                SetStatus("正在准备解锁...");
+                BallSkinService.TryUnlock(skin.id, success =>
+                {
+                    SetStatus(success ? "皮肤已解锁，可以装备" : "暂未解锁");
+                    Refresh();
+                });
+                return;
+            }
+
+            bool equipped = BallSkinService.EquipSkin(skin.id);
+            SetStatus(equipped ? "已装备：" + skin.displayName : "该皮肤尚未解锁");
+            Refresh();
+        }
+
+        private void Refresh()
+        {
+            BallSkinCatalog catalog = BallSkinService.Catalog;
+            if (catalog == null || catalog.Skins.Count == 0)
+            {
+                SetStatus("暂无可用皮肤");
+                if (actionButton != null)
+                    actionButton.interactable = false;
+                return;
+            }
+
+            selectedIndex = Mathf.Clamp(selectedIndex, 0, catalog.Skins.Count - 1);
+            string currentSkinId = BallSkinService.CurrentSkinId;
+            for (int i = 0; i < cardButtons.Count; i++)
+            {
+                int skinIndex = cardSkinIndices[i];
+                BallSkinEntry skin = catalog.Skins[skinIndex];
+                bool selected = selectedIndex == skinIndex;
+                bool equipped = currentSkinId == skin.id;
+                bool unlocked = BallSkinService.IsUnlocked(skin.id);
+
+                ColorBlock colors = cardButtons[i].colors;
+                colors.normalColor = selected ? CardSelected : CardNormal;
+                colors.selectedColor = CardSelected;
+                cardButtons[i].colors = colors;
+
+                TMP_Text state = cardStates[i];
+                if (state != null)
+                    state.text = equipped ? "已装备" : (unlocked ? "已拥有" : "尚未解锁");
+            }
+
+            BallSkinEntry selectedSkin = catalog.Skins[selectedIndex];
+            bool selectedUnlocked = BallSkinService.IsUnlocked(selectedSkin.id);
+            bool selectedEquipped = currentSkinId == selectedSkin.id;
+
+            if (selectedPreview != null)
+            {
+                selectedPreview.sprite = selectedSkin.previewSprite;
+                selectedPreview.enabled = selectedSkin.previewSprite != null;
+            }
+            if (selectedPreviewName != null)
+                selectedPreviewName.text = selectedSkin.displayName;
+            if (selectedState != null)
+                selectedState.text = selectedEquipped ? "当前装备" : (selectedUnlocked ? "已拥有，可装备" : "尚未解锁");
+            if (actionButton != null)
+                actionButton.interactable = !selectedEquipped;
+            if (actionLabel != null)
+                actionLabel.text = selectedEquipped
+                    ? "已装备"
+                    : (selectedUnlocked ? "装备" : (BallSkinService.RewardedAdService == null ? "解锁" : "观看广告解锁"));
+            UpdatePageButtons();
+        }
+
+        private void NavigatePage(int direction)
+        {
+            if (pageAnimating || pageCount <= 1)
+                return;
+
+            int targetPage = Mathf.Clamp(currentPage + direction, 0, pageCount - 1);
+            if (targetPage == currentPage)
+                return;
+
+            StartPageAnimation(targetPage);
+        }
+
+        private static int CalculatePageCount(int cardCount)
+        {
+            return Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(0, cardCount) / (float)CardsPerPage));
+        }
+
+        private void BindCardDragEvents()
+        {
+            if (cardArea == null)
+                return;
+
+            EventTrigger trigger = cardArea.GetComponent<EventTrigger>();
+            if (trigger == null)
+                trigger = cardArea.gameObject.AddComponent<EventTrigger>();
+            if (trigger.triggers == null)
+                trigger.triggers = new List<EventTrigger.Entry>();
+
+            AddDragTrigger(trigger, EventTriggerType.BeginDrag, HandleBeginDrag);
+            AddDragTrigger(trigger, EventTriggerType.EndDrag, HandleEndDrag);
+        }
+
+        private static void AddDragTrigger(EventTrigger trigger, EventTriggerType type, UnityAction<BaseEventData> callback)
+        {
+            EventTrigger.Entry entry = new EventTrigger.Entry { eventID = type };
+            entry.callback.AddListener(callback);
+            trigger.triggers.Add(entry);
+        }
+
+        private void HandleBeginDrag(BaseEventData eventData)
+        {
+            if (pageCount <= 1 || cardContent == null)
+                return;
+
+            StopPageAnimation();
+            pageAnimating = false;
+            pageDragging = true;
+            dragStartContentX = cardContent.anchoredPosition.x;
+            if (cardScrollRect != null)
+                cardScrollRect.StopMovement();
+            UpdatePageButtons();
+        }
+
+        private void HandleEndDrag(BaseEventData eventData)
+        {
+            if (!pageDragging || cardContent == null)
+                return;
+
+            pageDragging = false;
+            if (cardScrollRect != null)
+                cardScrollRect.StopMovement();
+            float dragDistance = cardContent.anchoredPosition.x - dragStartContentX;
+            int targetPage = ResolveSwipeTargetPage(currentPage, pageCount, dragDistance, SwipeThreshold);
+            StartPageAnimation(targetPage);
+        }
+
+        private static int ResolveSwipeTargetPage(int page, int totalPages, float dragDistance, float threshold)
+        {
+            int maxPage = Mathf.Max(0, totalPages - 1);
+            int clampedPage = Mathf.Clamp(page, 0, maxPage);
+            if (Mathf.Abs(dragDistance) <= Mathf.Max(0f, threshold))
+                return clampedPage;
+
+            int direction = dragDistance < 0f ? 1 : -1;
+            return Mathf.Clamp(clampedPage + direction, 0, maxPage);
+        }
+
+        private void StartPageAnimation(int targetPage)
+        {
+            StopPageAnimation();
+            pageAnimationCoroutine = StartCoroutine(AnimateToPage(targetPage));
+        }
+
+        private void StopPageAnimation()
+        {
+            if (pageAnimationCoroutine == null)
+                return;
+            StopCoroutine(pageAnimationCoroutine);
+            pageAnimationCoroutine = null;
+        }
+
+        private IEnumerator AnimateToPage(int targetPage)
+        {
+            pageAnimating = true;
+            UpdatePageButtons();
+            float start = cardScrollRect != null ? cardScrollRect.horizontalNormalizedPosition : 0f;
+            float end = pageCount <= 1 ? 0f : targetPage / (float)(pageCount - 1);
+            float elapsed = 0f;
+            while (elapsed < PageAnimationDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / PageAnimationDuration);
+                t = t * t * (3f - 2f * t);
+                if (cardScrollRect != null)
+                    cardScrollRect.horizontalNormalizedPosition = Mathf.Lerp(start, end, t);
+                yield return null;
+            }
+
+            currentPage = targetPage;
+            SetPageImmediate(currentPage);
+            pageAnimating = false;
+            pageAnimationCoroutine = null;
+            UpdatePageButtons();
+        }
+
+        private void SetPageImmediate(int page)
+        {
+            currentPage = Mathf.Clamp(page, 0, Mathf.Max(0, pageCount - 1));
+            if (cardScrollRect != null)
+                cardScrollRect.horizontalNormalizedPosition = pageCount <= 1 ? 0f : currentPage / (float)(pageCount - 1);
+            UpdatePageButtons();
+        }
+
+        private void UpdatePageButtons()
+        {
+            bool canNavigate = !pageAnimating && !pageDragging && pageCount > 1;
+            if (previousPageButton != null)
+                previousPageButton.interactable = canNavigate && currentPage > 0;
+            if (nextPageButton != null)
+                nextPageButton.interactable = canNavigate && currentPage < pageCount - 1;
+        }
+
+        private void SetStatus(string message)
+        {
+            if (statusText != null)
+                statusText.text = message;
+        }
+
+        private int FindCurrentIndex()
+        {
+            BallSkinCatalog catalog = BallSkinService.Catalog;
+            if (catalog == null)
+                return 0;
+
+            for (int i = 0; i < catalog.Skins.Count; i++)
+            {
+                if (catalog.Skins[i] != null && catalog.Skins[i].id == BallSkinService.CurrentSkinId)
+                    return i;
+            }
+            return 0;
+        }
+
+        private static void Stretch(RectTransform rect)
+        {
+            if (rect == null)
+                return;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+    }
 }
