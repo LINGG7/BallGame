@@ -14,7 +14,7 @@ namespace BallGame.Core
         [SerializeField] private MapBounds2D mapBounds;
         [SerializeField] private Vector2 followDeadZone = new Vector2(1.8f, 1.1f);
         [SerializeField] private float followSmoothTime = 0.15f;
-        [SerializeField] private float buildPanSmoothTime = 0.05f;
+        private float buildPanSmoothTime = 0.03f;
         [SerializeField] private float minOrthographicSize = 3f;
         [SerializeField] private float maxOrthographicSize = 5f;
         [SerializeField] private float mouseZoomSpeed = 1f;

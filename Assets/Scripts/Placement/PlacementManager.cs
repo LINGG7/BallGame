@@ -57,10 +57,8 @@ namespace BallGame.Placement
 
         public bool TryGetPlaceableAtScreenPosition(Vector2 screenPosition, out PlaceableTool tool)
         {
-            Vector2 worldPosition = ScreenToWorld(screenPosition);
-            Collider2D hit = Physics2D.OverlapPoint(worldPosition);
-            tool = hit != null ? hit.GetComponentInParent<PlaceableTool>() : null;
-            return tool != null && tool.CanEdit && placedTools.Contains(tool);
+            tool = FindPlaceableAt(ScreenToWorld(screenPosition));
+            return tool != null;
         }
 
         private void Update()
@@ -693,9 +691,54 @@ namespace BallGame.Placement
 
         private void SelectAt(Vector2 worldPosition)
         {
-            Collider2D hit = Physics2D.OverlapPoint(worldPosition);
-            PlaceableTool tool = hit != null ? hit.GetComponentInParent<PlaceableTool>() : null;
-            Select(tool);
+            Select(FindPlaceableAt(worldPosition));
+        }
+
+        private PlaceableTool FindPlaceableAt(Vector2 worldPosition)
+        {
+            int hitCount = Physics2D.OverlapPointNonAlloc(worldPosition, placementHits);
+            PlaceableTool bestTool = null;
+            int bestSortingOrder = int.MinValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider2D hit = placementHits[i];
+                if (hit == null)
+                {
+                    continue;
+                }
+
+                PlaceableTool tool = hit.GetComponentInParent<PlaceableTool>();
+                if (tool == null || !tool.CanEdit || !placedTools.Contains(tool))
+                {
+                    continue;
+                }
+
+                int sortingOrder = GetHighestSortingOrder(tool);
+                if (bestTool == null || sortingOrder > bestSortingOrder)
+                {
+                    bestTool = tool;
+                    bestSortingOrder = sortingOrder;
+                }
+            }
+
+            return bestTool;
+        }
+
+        private static int GetHighestSortingOrder(PlaceableTool tool)
+        {
+            int highestOrder = int.MinValue;
+            Renderer[] renderers = tool.GetComponentsInChildren<Renderer>();
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer toolRenderer = renderers[i];
+                if (toolRenderer != null && toolRenderer.enabled)
+                {
+                    highestOrder = Mathf.Max(highestOrder, toolRenderer.sortingOrder);
+                }
+            }
+
+            return highestOrder;
         }
 
         private void Select(PlaceableTool tool)
