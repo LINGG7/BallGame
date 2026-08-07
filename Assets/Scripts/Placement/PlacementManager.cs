@@ -698,6 +698,7 @@ namespace BallGame.Placement
         {
             int hitCount = Physics2D.OverlapPointNonAlloc(worldPosition, placementHits);
             PlaceableTool bestTool = null;
+            int bestDefinitionSortingOrder = int.MinValue;
             int bestSortingOrder = int.MinValue;
 
             for (int i = 0; i < hitCount; i++)
@@ -714,10 +715,14 @@ namespace BallGame.Placement
                     continue;
                 }
 
+                int definitionSortingOrder = tool.Definition != null ? tool.Definition.ClickSortingOrder : int.MinValue;
                 int sortingOrder = GetHighestSortingOrder(tool);
-                if (bestTool == null || sortingOrder > bestSortingOrder)
+                if (bestTool == null
+                    || definitionSortingOrder > bestDefinitionSortingOrder
+                    || (definitionSortingOrder == bestDefinitionSortingOrder && sortingOrder > bestSortingOrder))
                 {
                     bestTool = tool;
+                    bestDefinitionSortingOrder = definitionSortingOrder;
                     bestSortingOrder = sortingOrder;
                 }
             }

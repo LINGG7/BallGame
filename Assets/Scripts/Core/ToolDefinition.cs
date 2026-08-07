@@ -15,6 +15,7 @@ namespace BallGame.Core
         [SerializeField] private bool canRotate = true;
         [SerializeField] private float rotationStep = 15f;
         [SerializeField] private float placementRadius = 0.45f;
+        [SerializeField] private int clickSortingOrder;
 
         public string DisplayName => displayName;
         public GameObject Prefab => prefab;
@@ -26,5 +27,6 @@ namespace BallGame.Core
         public bool CanRotate => canRotate;
         public float RotationStep => Mathf.Max(1f, rotationStep);
         public float PlacementRadius => Mathf.Max(0.05f, placementRadius);
+        public int ClickSortingOrder => clickSortingOrder;
     }
 }

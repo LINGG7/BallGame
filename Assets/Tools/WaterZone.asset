@@ -22,3 +22,4 @@ MonoBehaviour:
   canRotate: 0
   rotationStep: 15
   placementRadius: 1.2
+  clickSortingOrder: 1

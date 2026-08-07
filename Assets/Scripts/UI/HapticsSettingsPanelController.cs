@@ -112,7 +112,7 @@ namespace BallGame.UI
 				{
 					bool flag = Levels[i] == intensityLevel;
 					((Selectable)levelButtons[i]).colors = GetSelectionColors(defaultOptionColors, flag);
-					levelTexts[i].text = (flag ? ("✓ " + LevelLabels[i]) : LevelLabels[i]);
+					levelTexts[i].text = (flag ? ("· " + LevelLabels[i]) : LevelLabels[i]);
 				}
 			}
 		}

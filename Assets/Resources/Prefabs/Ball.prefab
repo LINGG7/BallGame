@@ -9692,6 +9692,7 @@ GameObject:
   - component: {fileID: 8240095656341566450}
   - component: {fileID: 5964108669909398780}
   - component: {fileID: 958145165108411548}
+  - component: {fileID: 5267160083312229799}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Untagged
@@ -9870,3 +9871,15 @@ MonoBehaviour:
   maximumEmissionRate: 34
   minimumRollingVelocity: 0.3
   maximumRollingVelocity: 0.9
+--- !u!114 &5267160083312229799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8240095656341566447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a2b3c4d5e6f78900112233445566772, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
