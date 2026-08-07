@@ -16,7 +16,9 @@
         "Unity.MiniHos.FontABTool.dll"
     ],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "!BALLGAME_BROWSER_WEBGL"
+    ],
     "versionDefines": [],
     "noEngineReferences": false
 }

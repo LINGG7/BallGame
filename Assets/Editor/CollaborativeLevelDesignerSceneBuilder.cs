@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.IO;
 using BallGame.LevelDesign;
 using TMPro;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -13,6 +15,21 @@ namespace BallGame.Editor
     {
         private const string ScenePath = "Assets/Scenes/LevelDesigner.unity";
         private const string UiPrefabPath = "Assets/LevelDesigner/DesignerUI.prefab";
+        private const string BrowserWebGlDefine = "BALLGAME_BROWSER_WEBGL";
+        private static readonly string[] TapBrowserPluginPaths =
+        {
+            "Packages/com.taptap.minigame/Runtime/Plugins/MiniHost.jslib",
+            "Packages/com.taptap.minigame/Runtime/Plugins/MiniHost.jspre",
+            "Packages/com.taptap.minigame/Runtime/Plugins/TapSDK.jslib",
+            "Packages/com.taptap.minigame/Runtime/Plugins/minihost-plugin.taptap.runtime.dll",
+            "Packages/com.taptap.minigame/Runtime/Plugins/TapExtManagerHandler.dll"
+        };
+        private static readonly HashSet<string> TapBrowserPluginsRequiringReimport = new HashSet<string>
+        {
+            "Packages/com.taptap.minigame/Runtime/Plugins/MiniHost.jslib",
+            "Packages/com.taptap.minigame/Runtime/Plugins/MiniHost.jspre",
+            "Packages/com.taptap.minigame/Runtime/Plugins/TapSDK.jslib"
+        };
 
         [InitializeOnLoadMethod]
         private static void QueueCreateMissingAssets()
@@ -172,9 +189,89 @@ namespace BallGame.Editor
                 scenes = new[] { ScenePath },
                 locationPathName = output,
                 target = BuildTarget.WebGL,
-                options = BuildOptions.None
+                subtarget = 0,
+                options = BuildOptions.None,
+                extraScriptingDefines = new[] { BrowserWebGlDefine }
             };
-            BuildPipeline.BuildPlayer(options);
+            Dictionary<string, bool> tapPluginCompatibility = new Dictionary<string, bool>();
+            BuildReport report;
+            try
+            {
+                DisableTapBrowserPlugins(tapPluginCompatibility);
+                report = BuildPipeline.BuildPlayer(options);
+            }
+            finally
+            {
+                RestoreTapBrowserPlugins(tapPluginCompatibility);
+            }
+
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                EditorUtility.DisplayDialog("Build Failed", "The browser WebGL designer build did not complete successfully. Check the Console for details.", "OK");
+                return;
+            }
+
+            string contaminatedFile = FindTapBridgeReference(output);
+            if (!string.IsNullOrEmpty(contaminatedFile))
+            {
+                Debug.LogError("Browser WebGL build still contains a TapTap mini-game bridge: " + contaminatedFile);
+                EditorUtility.DisplayDialog(
+                    "Build Validation Failed",
+                    "The output still contains TapTap mini-game bridge code and must not be uploaded to a browser host. Check the Console for details.",
+                    "OK");
+                return;
+            }
+
+            Debug.Log("Created browser-safe Level Designer WebGL build: " + output);
+            EditorUtility.DisplayDialog("Build Complete", "Browser WebGL designer created successfully.\n\n" + output, "OK");
+        }
+
+        private static void DisableTapBrowserPlugins(Dictionary<string, bool> compatibility)
+        {
+            for (int i = 0; i < TapBrowserPluginPaths.Length; i++)
+            {
+                string path = TapBrowserPluginPaths[i];
+                PluginImporter importer = AssetImporter.GetAtPath(path) as PluginImporter;
+                if (importer == null)
+                    throw new FileNotFoundException("TapTap browser plugin importer was not found.", path);
+
+                bool wasCompatible = importer.GetCompatibleWithPlatform(BuildTarget.WebGL);
+                compatibility[path] = wasCompatible;
+                if (!wasCompatible) continue;
+                importer.SetCompatibleWithPlatform(BuildTarget.WebGL, false);
+                if (TapBrowserPluginsRequiringReimport.Contains(path)) importer.SaveAndReimport();
+            }
+        }
+
+        private static void RestoreTapBrowserPlugins(Dictionary<string, bool> compatibility)
+        {
+            foreach (KeyValuePair<string, bool> entry in compatibility)
+            {
+                PluginImporter importer = AssetImporter.GetAtPath(entry.Key) as PluginImporter;
+                if (importer == null || importer.GetCompatibleWithPlatform(BuildTarget.WebGL) == entry.Value) continue;
+                importer.SetCompatibleWithPlatform(BuildTarget.WebGL, entry.Value);
+                if (TapBrowserPluginsRequiringReimport.Contains(entry.Key)) importer.SaveAndReimport();
+            }
+        }
+
+        private static string FindTapBridgeReference(string output)
+        {
+            string[] frameworkFiles = Directory.GetFiles(output, "*.framework.js", SearchOption.AllDirectories);
+            for (int i = 0; i < frameworkFiles.Length; i++)
+            {
+                string contents = File.ReadAllText(frameworkFiles[i]);
+                if (contents.Contains("TJWASMSDK"))
+                    return frameworkFiles[i];
+            }
+
+            string[] symbolFiles = Directory.GetFiles(output, "*.symbols.json", SearchOption.AllDirectories);
+            for (int i = 0; i < symbolFiles.Length; i++)
+            {
+                string contents = File.ReadAllText(symbolFiles[i]);
+                if (contents.Contains("TapSDKManagerHandler_")) return symbolFiles[i];
+            }
+
+            return null;
         }
     }
 }
