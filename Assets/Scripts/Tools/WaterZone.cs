@@ -1,12 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using BallGame.Audio;
+using BallGame.Core;
 using UnityEngine;
 
 namespace BallGame.Tools
 {
     [RequireComponent(typeof(BoxCollider2D))]
-    public sealed class WaterZone : MonoBehaviour
+    public sealed class WaterZone : MonoBehaviour, ISizeEditable2D
     {
         private const string SplashInResourcePath = "Audio/SFX/SplashIn";
         private const string SplashOutResourcePath = "Audio/SFX/SplashOut";
@@ -36,6 +37,14 @@ namespace BallGame.Tools
         private Material runtimeBubbleMaterial;
         private AudioClip splashInSfx;
         private AudioClip splashOutSfx;
+
+        public Vector2 Size => size;
+
+        public void SetSize(Vector2 value)
+        {
+            size = new Vector2(Mathf.Max(0.1f, value.x), Mathf.Max(0.1f, value.y));
+            RefreshShape();
+        }
 
         private void Awake()
         {

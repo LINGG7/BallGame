@@ -100,6 +100,12 @@ namespace BallGame.Core
             ApplyMesh();
         }
 
+        public void SetWidth(float value)
+        {
+            width = Mathf.Max(0.01f, value);
+            Rebuild();
+        }
+
         private void CacheComponents()
         {
             if (splineContainer == null)

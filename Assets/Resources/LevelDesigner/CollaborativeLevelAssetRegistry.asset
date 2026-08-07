@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f59d0e3be3963cf45bef997be4ac0ff6, type: 3}
+  m_Name: CollaborativeLevelAssetRegistry
+  m_EditorClassIdentifier: 
+  entries:
+  - assetKey: ball
+    kind: 0
+    prefab: {fileID: 8240095656341566447, guid: 56b294d61347cba449808df99b3b8030, type: 3}
+    icon: {fileID: 21300000, guid: f24ce25aed6924d4f96f8f05aa9b04b3, type: 3}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0
+  - assetKey: goal
+    kind: 1
+    prefab: {fileID: 3777762384437280839, guid: d556cb52c3ae09a4486350b147876378, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0
+  - assetKey: plank
+    kind: 2
+    prefab: {fileID: 5159242901172802367, guid: c4d2764f199e76e4d9acf4bd3f16f134, type: 3}
+    icon: {fileID: 21300000, guid: 13d04d8b057f7c24bbb6a98a63bbd5d4, type: 3}
+    toolDefinition: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
+    supportsSpline: 0
+  - assetKey: spring
+    kind: 2
+    prefab: {fileID: 1112845811365615000, guid: dc01d0e6c4891bf4baf8aca026747791, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+    supportsSpline: 0
+  - assetKey: fan
+    kind: 2
+    prefab: {fileID: 4751090511571632332, guid: a39a93d4b09666f4a8bf7c4f988fb678, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+    supportsSpline: 0
+  - assetKey: conveyor
+    kind: 2
+    prefab: {fileID: 8585567832392132614, guid: 9e76b266cc01ca944bb48ada774c0cb9, type: 3}
+    icon: {fileID: 21300000, guid: 5479fcd12f257314caafecbdc98df330, type: 3}
+    toolDefinition: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+    supportsSpline: 0
+  - assetKey: magnet_plus
+    kind: 2
+    prefab: {fileID: 4463501066157104591, guid: e4635618e84ee3841a3c6a9cad0d809f, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
+    supportsSpline: 0
+  - assetKey: magnet_minus
+    kind: 2
+    prefab: {fileID: 4463501066157104591, guid: b23cdc5d2a3927d4f88274a30c4a8d1c, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
+    supportsSpline: 0
+  - assetKey: portal
+    kind: 2
+    prefab: {fileID: 8194962196230695540, guid: 9ba289f24c12bb84ab91e47eb6829891, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 11400000, guid: 752ac040948521647b593ccba1b7e68f, type: 2}
+    supportsSpline: 0
+  - assetKey: water
+    kind: 2
+    prefab: {fileID: 2403779044001056482, guid: a49675b7880130a488c0e9b69dc9ea16, type: 3}
+    icon: {fileID: 21300000, guid: c2b879bc2beb4a147a6d731ff0eae3d8, type: 3}
+    toolDefinition: {fileID: 11400000, guid: 7444849728177284aa7e218d6d66f0b5, type: 2}
+    supportsSpline: 0
+  - assetKey: anti_gravity
+    kind: 2
+    prefab: {fileID: 470010000000000001, guid: 64c54d741df246e49ad78d41ca7f4d76, type: 3}
+    icon: {fileID: 21300000, guid: 62d5b0de3da7eed448e0b730acf65fbb, type: 3}
+    toolDefinition: {fileID: 11400000, guid: 04d1495afc2f43d4bb5fb6c94a019c29, type: 2}
+    supportsSpline: 0
+  - assetKey: obstacle
+    kind: 2
+    prefab: {fileID: 1312573017277519491, guid: 2a67a8697c4b3314ab3497f4c7d1bdf0, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0
+  - assetKey: curve_obstacle
+    kind: 3
+    prefab: {fileID: 6999368793927911143, guid: c3791f5e1b240d049b70ce9a57594bec, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 1

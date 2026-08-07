@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace BallGame.Tools
 {
-    public sealed class PortalTool : MonoBehaviour
+    public sealed class PortalTool : MonoBehaviour, ISimulationPreview2D
     {
         private const string PortalInResourcePath = "Audio/SFX/PortalIn";
         private const string PortalOutResourcePath = "Audio/SFX/PortalOut";
@@ -55,6 +55,7 @@ namespace BallGame.Tools
         }
 
         private float lastTeleportTime = -100f;
+        private bool simulationPreview;
         private GameManager gameManager;
         private Sprite idleSprite;
         private AudioClip portalInSfx;
@@ -115,6 +116,7 @@ namespace BallGame.Tools
 
         private void OnDisable()
         {
+            simulationPreview = false;
             CancelActiveTeleports();
             StopPortalEffect();
             Portals.Remove(this);
@@ -137,7 +139,7 @@ namespace BallGame.Tools
         {
             BallControllerBase ball = other.GetComponentInParent<BallControllerBase>();
             PortalTool exit = FindExitPortal();
-            TryTeleport(ball, exit, Time.time, gameManager != null && gameManager.IsSimulating);
+            TryTeleport(ball, exit, Time.time, simulationPreview || (gameManager != null && gameManager.IsSimulating));
         }
 
         private bool TryTeleport(BallControllerBase ball, PortalTool exit, float now, bool isSimulating)
@@ -591,6 +593,12 @@ namespace BallGame.Tools
             }
 
             SetAnimationPlaying(state == GameState.Simulate);
+        }
+
+        public void SetSimulationPreview(bool playing)
+        {
+            simulationPreview = playing;
+            SetAnimationPlaying(playing);
         }
 
         private void SetAnimationPlaying(bool playing)

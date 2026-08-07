@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using BallGame.Audio;
+using BallGame.Core;
 using UnityEngine;
 
 namespace BallGame.Tools
 {
-    public sealed class AntiGravityField : MonoBehaviour
+    public sealed class AntiGravityField : MonoBehaviour, ISizeEditable2D
     {
         [SerializeField] private Vector2 size = new Vector2(3f, 2f);
         [SerializeField] private LayerMask affectedLayers = ~0;
@@ -17,6 +18,13 @@ namespace BallGame.Tools
         private BoxCollider2D boxCollider;
 
         public bool AllowOtherToolsInside => allowOtherToolsInside;
+        public Vector2 Size => size;
+
+        public void SetSize(Vector2 value)
+        {
+            size = new Vector2(Mathf.Max(0.1f, value.x), Mathf.Max(0.1f, value.y));
+            RefreshShape();
+        }
 
         private void Awake()
         {

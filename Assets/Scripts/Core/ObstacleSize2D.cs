@@ -8,7 +8,7 @@ namespace BallGame.Core
     [ExecuteAlways]
     [RequireComponent(typeof(SpriteRenderer))]
     [RequireComponent(typeof(BoxCollider2D))]
-    public sealed class ObstacleSize2D : MonoBehaviour
+    public sealed class ObstacleSize2D : MonoBehaviour, ISizeEditable2D
     {
         [SerializeField] private Vector2 size = Vector2.one;
 

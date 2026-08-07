@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace BallGame.Tools
 {
-	public sealed class FanZone : MonoBehaviour
+	public sealed class FanZone : MonoBehaviour, ISimulationPreview2D
 	{
 		private const string AirWooshResourcePath = "Audio/SFX/AirWoosh";
 
@@ -267,6 +267,12 @@ namespace BallGame.Tools
 				ClearTrackedBalls();
 			}
 			SetAnimationPlaying(state == GameState.Simulate);
+		}
+
+		public void SetSimulationPreview(bool playing)
+		{
+			if (!playing) ClearTrackedBalls();
+			SetAnimationPlaying(playing);
 		}
 
 		private void SetAnimationPlaying(bool playing)

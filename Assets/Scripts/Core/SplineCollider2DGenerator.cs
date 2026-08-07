@@ -109,6 +109,13 @@ namespace BallGame.Core
             }
         }
 
+        public void Configure(float newWidth, bool roundedEdge)
+        {
+            width = Mathf.Max(0.01f, newWidth);
+            colliderMode = roundedEdge ? ColliderMode.RoundedEdge : ColliderMode.SolidPolygon;
+            Rebuild();
+        }
+
         private void CacheComponents()
         {
             if (splineContainer == null)

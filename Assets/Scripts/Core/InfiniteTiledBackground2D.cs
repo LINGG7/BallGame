@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BallGame.Core
@@ -6,14 +7,11 @@ namespace BallGame.Core
     [RequireComponent(typeof(SpriteRenderer))]
     public sealed class InfiniteTiledBackground2D : MonoBehaviour
     {
-        private const int TileGridSize = 3;
-        private const int TileCount = TileGridSize * TileGridSize;
-
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Vector2 tileSizeOverride;
         [SerializeField] private Vector2 tilePadding;
 
-        private readonly SpriteRenderer[] tiles = new SpriteRenderer[TileCount];
+        private readonly List<SpriteRenderer> tiles = new List<SpriteRenderer>();
         private SpriteRenderer sourceRenderer;
 
         private void Awake()
@@ -30,6 +28,7 @@ namespace BallGame.Core
 
         private void OnValidate()
         {
+            if (!gameObject.scene.IsValid()) return;
             Initialize();
             RefreshTiles();
         }
@@ -53,34 +52,28 @@ namespace BallGame.Core
                 sourceRenderer = GetComponent<SpriteRenderer>();
             }
 
-            EnsureTiles();
         }
 
-        private void EnsureTiles()
+        private void EnsureTiles(int count)
         {
-            for (int i = 0; i < TileCount; i++)
+            for (int i = tiles.Count; i < count; i++)
             {
-                if (tiles[i] == null)
+                Transform child = transform.Find($"Tile {i:00}");
+                if (child == null)
                 {
-                    Transform child = transform.Find($"Tile {i:00}");
-                    if (child == null)
-                    {
-                        GameObject tileObject = new GameObject($"Tile {i:00}");
-                        tileObject.transform.SetParent(transform, false);
-                        child = tileObject.transform;
-                    }
-
-                    tiles[i] = child.GetComponent<SpriteRenderer>();
-                    if (tiles[i] == null)
-                    {
-                        tiles[i] = child.gameObject.AddComponent<SpriteRenderer>();
-                    }
+                    GameObject tileObject = new GameObject($"Tile {i:00}");
+                    tileObject.transform.SetParent(transform, false);
+                    child = tileObject.transform;
                 }
+                SpriteRenderer renderer = child.GetComponent<SpriteRenderer>();
+                if (renderer == null) renderer = child.gameObject.AddComponent<SpriteRenderer>();
+                tiles.Add(renderer);
             }
         }
 
         private void RefreshTiles()
         {
+            if (!gameObject.scene.IsValid()) return;
             if (sourceRenderer == null || sourceRenderer.sprite == null)
             {
                 return;
@@ -89,13 +82,16 @@ namespace BallGame.Core
             sourceRenderer.enabled = false;
             Vector2 tileSize = GetTileSize();
             Vector3 cameraPosition = GetCameraPosition();
+            GetGridRadius(tileSize, out int radiusX, out int radiusY);
+            int requiredCount = (radiusX * 2 + 1) * (radiusY * 2 + 1);
+            EnsureTiles(requiredCount);
             float originX = Mathf.Round(cameraPosition.x / tileSize.x) * tileSize.x;
             float originY = Mathf.Round(cameraPosition.y / tileSize.y) * tileSize.y;
 
             int index = 0;
-            for (int y = -1; y <= 1; y++)
+            for (int y = -radiusY; y <= radiusY; y++)
             {
-                for (int x = -1; x <= 1; x++)
+                for (int x = -radiusX; x <= radiusX; x++)
                 {
                     SpriteRenderer tile = tiles[index++];
                     ApplySourceSettings(tile);
@@ -103,6 +99,23 @@ namespace BallGame.Core
                     tile.transform.position = new Vector3(originX + x * tileSize.x, originY + y * tileSize.y, transform.position.z);
                 }
             }
+            for (int i = index; i < tiles.Count; i++)
+                if (tiles[i] != null) tiles[i].enabled = false;
+        }
+
+        private void GetGridRadius(Vector2 tileSize, out int radiusX, out int radiusY)
+        {
+            Camera cameraToUse = targetCamera != null ? targetCamera : Camera.main;
+            if (!Application.isPlaying || cameraToUse == null || !cameraToUse.orthographic)
+            {
+                radiusX = 1;
+                radiusY = 1;
+                return;
+            }
+            float halfHeight = cameraToUse.orthographicSize;
+            float halfWidth = halfHeight * cameraToUse.aspect;
+            radiusX = Mathf.Max(1, Mathf.CeilToInt(halfWidth / tileSize.x) + 1);
+            radiusY = Mathf.Max(1, Mathf.CeilToInt(halfHeight / tileSize.y) + 1);
         }
 
         private Vector2 GetTileSize()
