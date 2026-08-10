@@ -26,6 +26,8 @@ namespace BallGame.Core
         private MeshFilter meshFilter;
         private Mesh generatedMesh;
 
+        public float Width => width;
+
         private void OnEnable()
         {
             CacheComponents();

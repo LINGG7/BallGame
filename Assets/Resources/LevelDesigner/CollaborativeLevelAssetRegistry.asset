@@ -91,3 +91,9 @@ MonoBehaviour:
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 1
+  - assetKey: track_intersection
+    kind: 2
+    prefab: {fileID: 4128212680698636916, guid: 5822a12a4c23f084b871aa77f3a14292, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0

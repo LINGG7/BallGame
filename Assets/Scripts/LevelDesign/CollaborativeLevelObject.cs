@@ -14,12 +14,15 @@ namespace BallGame.LevelDesign
         public string SplineCollisionMode { get; set; } = "SolidPolygon";
         public List<CollaborativeProperty> Properties { get; } = new List<CollaborativeProperty>();
         public List<CollaborativeSplinePoint> SplinePoints { get; } = new List<CollaborativeSplinePoint>();
+        public CollaborativeTrackIntersectionData TrackIntersection { get; private set; }
 
         public void Initialize(string id, CollaborativeLevelAssetEntry entry)
         {
             Id = id;
             AssetKey = entry.assetKey;
             Kind = entry.kind;
+            TrackIntersectionEditable2D editable = GetComponent<TrackIntersectionEditable2D>();
+            TrackIntersection = editable != null ? editable.CaptureData() : null;
         }
 
         public void Initialize(CollaborativeObjectRecord record)
@@ -34,11 +37,17 @@ namespace BallGame.LevelDesign
             if (record.properties != null) Properties.AddRange(record.properties);
             SplinePoints.Clear();
             if (record.splinePoints != null) SplinePoints.AddRange(record.splinePoints);
+            TrackIntersectionEditable2D editable = GetComponent<TrackIntersectionEditable2D>();
+            TrackIntersection = record.trackIntersection != null
+                ? record.trackIntersection.Clone()
+                : editable != null ? editable.CaptureData() : null;
         }
 
         public CollaborativeObjectRecord ToRecord()
         {
             bool hasSize = SizeEditable2DUtility.TryGet(gameObject, out ISizeEditable2D editable);
+            TrackIntersectionEditable2D trackEditable = GetComponent<TrackIntersectionEditable2D>();
+            if (trackEditable != null) TrackIntersection = trackEditable.CaptureData(TrackIntersection);
             return new CollaborativeObjectRecord
             {
                 id = Id,
@@ -53,7 +62,8 @@ namespace BallGame.LevelDesign
                 splineClosed = SplineClosed,
                 splineCollisionMode = SplineCollisionMode,
                 properties = new List<CollaborativeProperty>(Properties),
-                splinePoints = new List<CollaborativeSplinePoint>(SplinePoints)
+                splinePoints = new List<CollaborativeSplinePoint>(SplinePoints),
+                trackIntersection = TrackIntersection != null ? TrackIntersection.Clone() : null
             };
         }
     }

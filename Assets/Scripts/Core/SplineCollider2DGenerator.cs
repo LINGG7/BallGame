@@ -116,6 +116,12 @@ namespace BallGame.Core
             Rebuild();
         }
 
+        public void SetWidth(float newWidth)
+        {
+            width = Mathf.Max(0.01f, newWidth);
+            Rebuild();
+        }
+
         private void CacheComponents()
         {
             if (splineContainer == null)

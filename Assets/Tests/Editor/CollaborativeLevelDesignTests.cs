@@ -1,9 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace BallGame.Tests.Editor
 {
@@ -49,13 +53,15 @@ namespace BallGame.Tests.Editor
         }
 
         [Test]
-        public void CurrentDocument_UsesVersionThreeAndRejectsLegacyTransformScale()
+        public void CurrentDocument_UsesVersionFourAndRejectsLegacyTransformScale()
         {
             Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
             Type validatorType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelValidator, Assembly-CSharp");
             Assert.That(documentType, Is.Not.Null);
             object current = Activator.CreateInstance(documentType);
-            Assert.That((int)documentType.GetField("formatVersion").GetValue(current), Is.EqualTo(3));
+            Assert.That((int)documentType.GetField("formatVersion").GetValue(current), Is.EqualTo(4));
+            Assert.That((string)documentType.GetField("mode").GetValue(current), Is.EqualTo("Normal"));
+            Assert.That(((IList)documentType.GetField("toolStock").GetValue(current)).Count, Is.EqualTo(0));
 
             string json = "{\"formatVersion\":1,\"title\":\"Legacy\",\"canvasWidth\":24,\"canvasHeight\":14,\"objects\":["
                 + "{\"id\":\"ball\",\"assetKey\":\"ball\",\"kind\":0,\"position\":{\"x\":0,\"y\":0},\"scale\":{\"x\":2,\"y\":1}},"
@@ -101,16 +107,167 @@ namespace BallGame.Tests.Editor
         }
 
         [Test]
+        public void DesignerSelection_UsesToolClickOrderThenNewerSibling()
+        {
+            Type controllerType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDesignerController, Assembly-CSharp");
+            Type markerType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelObject, Assembly-CSharp");
+            Type registryType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelAssetRegistry, Assembly-CSharp");
+            Type entryType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelAssetEntry, Assembly-CSharp");
+            Type toolType = Type.GetType("BallGame.Core.ToolDefinition, Assembly-CSharp");
+            Assert.That(controllerType, Is.Not.Null);
+            Assert.That(markerType, Is.Not.Null);
+            Assert.That(registryType, Is.Not.Null);
+            Assert.That(entryType, Is.Not.Null);
+            Assert.That(toolType, Is.Not.Null);
+
+            GameObject host = new GameObject("Inactive Designer Selection Test");
+            host.SetActive(false);
+            GameObject world = new GameObject("Selection World");
+            ScriptableObject registry = ScriptableObject.CreateInstance(registryType);
+            ScriptableObject toolDefinition = ScriptableObject.CreateInstance(toolType);
+            Texture2D texture = new Texture2D(1, 1);
+            texture.SetPixel(0, 0, Color.white);
+            texture.Apply();
+            Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
+            try
+            {
+                object withoutDefinitionEntry = Activator.CreateInstance(entryType);
+                entryType.GetField("assetKey").SetValue(withoutDefinitionEntry, "without_definition");
+                object toolEntry = Activator.CreateInstance(entryType);
+                entryType.GetField("assetKey").SetValue(toolEntry, "tool");
+                entryType.GetField("toolDefinition").SetValue(toolEntry, toolDefinition);
+                IList entries = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(entryType));
+                entries.Add(withoutDefinitionEntry);
+                entries.Add(toolEntry);
+                registryType.GetField("entries", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(registry, entries);
+
+                GameObject withoutDefinition = new GameObject("Without Definition", typeof(SpriteRenderer), typeof(BoxCollider2D));
+                withoutDefinition.transform.SetParent(world.transform, false);
+                withoutDefinition.GetComponent<SpriteRenderer>().sprite = sprite;
+                Component withoutDefinitionMarker = withoutDefinition.AddComponent(markerType);
+                GameObject tool = new GameObject("Tool", typeof(SpriteRenderer), typeof(BoxCollider2D));
+                tool.transform.SetParent(world.transform, false);
+                tool.GetComponent<SpriteRenderer>().sprite = sprite;
+                Component toolMarker = tool.AddComponent(markerType);
+                MethodInfo initialize = markerType.GetMethod("Initialize", new[] { typeof(string), entryType });
+                initialize.Invoke(withoutDefinitionMarker, new[] { "without_definition_1", withoutDefinitionEntry });
+                initialize.Invoke(toolMarker, new[] { "tool_2", toolEntry });
+
+                Component controller = host.AddComponent(controllerType);
+                controllerType.GetField("registry", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, registry);
+                controllerType.GetField("worldRoot", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, world.transform);
+                MethodInfo findObject = controllerType.GetMethod("FindObjectAt", BindingFlags.NonPublic | BindingFlags.Instance);
+                FieldInfo clickOrder = toolType.GetField("clickSortingOrder", BindingFlags.NonPublic | BindingFlags.Instance);
+                Collider2D[] hits = { tool.GetComponent<BoxCollider2D>(), withoutDefinition.GetComponent<BoxCollider2D>() };
+
+                clickOrder.SetValue(toolDefinition, 4);
+                Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, hits }), Is.EqualTo(withoutDefinitionMarker),
+                    "Objects without a ToolDefinition must use the default click order 5.");
+                Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, Array.Empty<Collider2D>() }), Is.EqualTo(withoutDefinitionMarker),
+                    "Sprite bounds fallback must use the same click ordering.");
+
+                clickOrder.SetValue(toolDefinition, 5);
+                Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, hits }), Is.EqualTo(toolMarker),
+                    "The newer sibling must win when click orders are equal.");
+
+                clickOrder.SetValue(toolDefinition, 6);
+                Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, Array.Empty<Collider2D>() }), Is.EqualTo(toolMarker),
+                    "A higher ToolDefinition click order must win in sprite bounds fallback.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+                UnityEngine.Object.DestroyImmediate(world);
+                UnityEngine.Object.DestroyImmediate(registry);
+                UnityEngine.Object.DestroyImmediate(toolDefinition);
+                UnityEngine.Object.DestroyImmediate(sprite);
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
+        }
+
+        [Test]
         public void DesignerUi_ContainsSizeInputsAndPersistentLabels()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/LevelDesigner/DesignerUI.prefab");
+            UnityEngine.Object designerFont = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/LevelDesigner/Fonts/LXGWWenKai-Light Dynamic SDF.asset");
+            GameObject settingsPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/LevelDesigner/LevelSettingsPanel.prefab");
             Assert.That(prefab, Is.Not.Null);
+            Assert.That(designerFont, Is.Not.Null);
+            Assert.That(designerFont.GetType().GetProperty("atlasPopulationMode").GetValue(designerFont).ToString(), Is.EqualTo("Dynamic"));
+            Assert.That(settingsPrefab, Is.Not.Null);
             Assert.That(FindChild(prefab.transform, "Size XInput"), Is.Not.Null);
             Assert.That(FindChild(prefab.transform, "Size YInput"), Is.Not.Null);
             Assert.That(FindChild(prefab.transform, "Size X Label"), Is.Not.Null);
             Assert.That(FindChild(prefab.transform, "Size Y Label"), Is.Not.Null);
             Assert.That(FindChild(prefab.transform, "Scale XInput"), Is.Null);
             Assert.That(FindChild(prefab.transform, "Scale YInput"), Is.Null);
+            Assert.That(FindChild(prefab.transform, "Level SettingsButton"), Is.Not.Null);
+            Assert.That(FindChild(prefab.transform, "track_intersectionButton"), Is.Not.Null);
+            Assert.That(FindChild(prefab.transform, "Track PartDropdown"), Is.Not.Null);
+            Assert.That(FindChild(prefab.transform, "Entry XInput"), Is.Not.Null);
+            Assert.That(FindChild(prefab.transform, "Entry YInput"), Is.Not.Null);
+            Assert.That(FindChild(prefab.transform, "Entry RotationInput"), Is.Not.Null);
+            Transform palette = FindChild(prefab.transform, "Palette");
+            Assert.That(palette, Is.Not.Null);
+            Transform scrollView = FindChild(palette, "ToolScrollView");
+            Assert.That(scrollView, Is.Not.Null);
+            Transform content = FindChild(scrollView, "Content");
+            Transform scrollbarObject = FindChild(palette, "Scrollbar");
+            RectTransform paletteRect = palette as RectTransform;
+            Assert.That(paletteRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
+            Assert.That(paletteRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
+            Assert.That(paletteRect.sizeDelta.x, Is.EqualTo(-350f).Within(0.01f));
+            Assert.That(paletteRect.sizeDelta.y, Is.EqualTo(120f).Within(0.01f));
+            Assert.That(FindChild(palette, "Title").parent, Is.EqualTo(palette));
+            Assert.That(content, Is.Not.Null);
+            GridLayoutGroup paletteGrid = content.GetComponent<GridLayoutGroup>();
+            Assert.That(paletteGrid, Is.Not.Null);
+            Assert.That(content.GetComponent<VerticalLayoutGroup>(), Is.Null);
+            Assert.That(paletteGrid.cellSize, Is.EqualTo(new Vector2(230f, 48f)));
+            Assert.That(paletteGrid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
+            Assert.That(paletteGrid.constraintCount, Is.EqualTo(10));
+            Assert.That(content.GetComponent<ContentSizeFitter>(), Is.Not.Null);
+            Assert.That(scrollbarObject, Is.Not.Null);
+            ScrollRect paletteScroll = scrollView.GetComponent<ScrollRect>();
+            Assert.That(paletteScroll, Is.Not.Null);
+            Assert.That(paletteScroll.content, Is.EqualTo(content));
+            Assert.That(paletteScroll.horizontal, Is.False);
+            Assert.That(paletteScroll.vertical, Is.True);
+            Assert.That(paletteScroll.verticalScrollbar, Is.EqualTo(scrollbarObject.GetComponent<Scrollbar>()));
+            SerializedProperty paletteEntries = new SerializedObject(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath)).FindProperty("entries");
+            for (int i = 0; i < paletteEntries.arraySize; i++)
+            {
+                string assetKey = paletteEntries.GetArrayElementAtIndex(i).FindPropertyRelative("assetKey").stringValue;
+                Transform toolButton = FindChild(content, assetKey + "Button");
+                Assert.That(toolButton, Is.Not.Null, "Palette is missing " + assetKey + "Button.");
+                Assert.That(toolButton.parent, Is.EqualTo(content));
+            }
+            Type inputType = Type.GetType("TMPro.TMP_InputField, Unity.TextMeshPro");
+            Component titleInput = FindChild(prefab.transform, "Level titleInput").GetComponent(inputType);
+            Assert.That(titleInput, Is.Not.Null);
+            Assert.That(inputType.GetProperty("characterValidation").GetValue(titleInput).ToString(), Is.EqualTo("None"));
+            object textComponent = inputType.GetProperty("textComponent").GetValue(titleInput);
+            Assert.That(textComponent.GetType().GetProperty("font").GetValue(textComponent), Is.EqualTo(designerFont));
+            Assert.That(FindChild(settingsPrefab.transform, "LevelModeDropdown"), Is.Not.Null);
+            Assert.That(FindChild(settingsPrefab.transform, "Save SettingsButton"), Is.Not.Null);
+            Assert.That(FindChild(settingsPrefab.transform, "plank StockInput"), Is.Not.Null);
+            Assert.That(FindChild(settingsPrefab.transform, "track_intersection StockInput"), Is.Null);
+        }
+
+        [Test]
+        public void FormalBuildScenes_DoNotReferenceDesignerDynamicFont()
+        {
+            const string designerFontPath = "Assets/LevelDesigner/Fonts/LXGWWenKai-Light Dynamic SDF.asset";
+            HashSet<string> dependencies = new HashSet<string>(StringComparer.Ordinal);
+            foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
+            {
+                if (!scene.enabled || scene.path == ScenePath) continue;
+                foreach (string dependency in AssetDatabase.GetDependencies(scene.path, true))
+                    dependencies.Add(dependency);
+            }
+
+            Assert.That(dependencies.Contains(designerFontPath), Is.False,
+                "The Level Designer dynamic font must not be referenced by formal build scenes.");
         }
 
         [Test]
@@ -130,6 +287,272 @@ namespace BallGame.Tests.Editor
                 foreach (MonoBehaviour behaviour in prefab.GetComponentsInChildren<MonoBehaviour>(true))
                     supportsSize |= behaviour != null && interfaceType.IsInstanceOfType(behaviour);
                 Assert.That(supportsSize, Is.EqualTo(Array.IndexOf(approved, key) >= 0), key);
+            }
+        }
+
+        [Test]
+        public void Registry_ObstacleIsNotAnInventoryTool()
+        {
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+            MethodInfo find = registry.GetType().GetMethod("Find", BindingFlags.Public | BindingFlags.Instance);
+            object obstacle = find.Invoke(registry, new object[] { "obstacle" });
+            object plank = find.Invoke(registry, new object[] { "plank" });
+            object trackIntersection = find.Invoke(registry, new object[] { "track_intersection" });
+            PropertyInfo isInventoryTool = obstacle.GetType().GetProperty("IsInventoryTool", BindingFlags.Public | BindingFlags.Instance);
+            Assert.That((bool)isInventoryTool.GetValue(obstacle), Is.False);
+            Assert.That(trackIntersection, Is.Not.Null);
+            Assert.That((bool)isInventoryTool.GetValue(trackIntersection), Is.False);
+            Assert.That((bool)isInventoryTool.GetValue(plank), Is.True);
+        }
+
+        [Test]
+        public void TrackIntersectionPrefab_HasEditableCompoundDataAndRoundTrips()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/TrackIntersection.prefab");
+            Type editableType = Type.GetType("BallGame.LevelDesign.TrackIntersectionEditable2D, Assembly-CSharp");
+            Assert.That(prefab, Is.Not.Null);
+            Assert.That(editableType, Is.Not.Null);
+            Component prefabEditable = prefab.GetComponent(editableType);
+            Assert.That(prefabEditable, Is.Not.Null);
+            Assert.That((bool)editableType.GetProperty("IsConfigured").GetValue(prefabEditable), Is.True);
+
+            GameObject instance = UnityEngine.Object.Instantiate(prefab);
+            try
+            {
+                Component editable = instance.GetComponent(editableType);
+                MethodInfo capture = editableType.GetMethod("CaptureData");
+                MethodInfo apply = editableType.GetMethod("Apply");
+                object data = capture.Invoke(editable, new object[] { null });
+                Type dataType = data.GetType();
+                object upper = dataType.GetField("upperCurve").GetValue(data);
+                object lower = dataType.GetField("lowerCurve").GetValue(data);
+                IList upperPoints = (IList)upper.GetType().GetField("points").GetValue(upper);
+                IList lowerPoints = (IList)lower.GetType().GetField("points").GetValue(lower);
+                Assert.That(upperPoints.Count, Is.GreaterThanOrEqualTo(2));
+                Assert.That(lowerPoints.Count, Is.GreaterThanOrEqualTo(2));
+                int originalLowerCount = lowerPoints.Count;
+                upper.GetType().GetField("width").SetValue(upper, 0.73f);
+
+                object upperEntry = dataType.GetField("upperEntryA").GetValue(data);
+                upperEntry.GetType().GetField("positionOffset").SetValue(upperEntry, new Vector2(0.25f, -0.15f));
+                upperEntry.GetType().GetField("rotationOffset").SetValue(upperEntry, 12f);
+                bool attachToStart = (bool)upperEntry.GetType().GetField("attachToStart").GetValue(upperEntry);
+                object attachedPoint = upperPoints[attachToStart ? 0 : upperPoints.Count - 1];
+                FieldInfo pointPosition = attachedPoint.GetType().GetField("position");
+                pointPosition.SetValue(attachedPoint, (Vector2)pointPosition.GetValue(attachedPoint) + new Vector2(0.4f, 0.2f));
+                Transform entryTransform = (Transform)editableType.GetMethod("GetEntry").Invoke(editable, new object[] { true });
+                Vector3 entryBefore = entryTransform.position;
+
+                string json = JsonUtility.ToJson(data);
+                object parsed = JsonUtility.FromJson(json, dataType);
+                apply.Invoke(editable, new[] { parsed });
+                Assert.That(Vector3.Distance(entryTransform.position, entryBefore), Is.GreaterThan(0.05f));
+                object captured = capture.Invoke(editable, new[] { parsed });
+                object capturedUpper = dataType.GetField("upperCurve").GetValue(captured);
+                object capturedLower = dataType.GetField("lowerCurve").GetValue(captured);
+                object capturedEntry = dataType.GetField("upperEntryA").GetValue(captured);
+                Assert.That((float)capturedUpper.GetType().GetField("width").GetValue(capturedUpper), Is.EqualTo(0.73f).Within(0.001f));
+                Assert.That(((IList)capturedLower.GetType().GetField("points").GetValue(capturedLower)).Count, Is.EqualTo(originalLowerCount));
+                Vector2 capturedOffset = (Vector2)capturedEntry.GetType().GetField("positionOffset").GetValue(capturedEntry);
+                Assert.That(Vector2.Distance(capturedOffset, new Vector2(0.25f, -0.15f)), Is.LessThan(0.001f));
+                Assert.That((float)capturedEntry.GetType().GetField("rotationOffset").GetValue(capturedEntry), Is.EqualTo(12f).Within(0.01f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void TrackIntersection_VersionFourRequiresCompoundDataButVersionThreeUsesPrefabDefaults()
+        {
+            Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
+            Type validatorType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelValidator, Assembly-CSharp");
+            MethodInfo fromJson = documentType.GetMethod("FromJson", BindingFlags.Public | BindingFlags.Static);
+            MethodInfo validate = validatorType.GetMethod("Validate", BindingFlags.Public | BindingFlags.Static);
+            string objects = "["
+                + "{\"id\":\"ball\",\"assetKey\":\"ball\",\"kind\":0,\"scale\":{\"x\":1,\"y\":1}},"
+                + "{\"id\":\"goal\",\"assetKey\":\"goal\",\"kind\":1,\"scale\":{\"x\":1,\"y\":1}},"
+                + "{\"id\":\"track\",\"assetKey\":\"track_intersection\",\"kind\":2,\"scale\":{\"x\":1,\"y\":1}}]";
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+
+            object versionThree = fromJson.Invoke(null, new object[] { "{\"formatVersion\":3,\"title\":\"Legacy Track\",\"canvasWidth\":24,\"canvasHeight\":14,\"objects\":" + objects + "}" });
+            IList v3Errors = (IList)validate.Invoke(null, new[] { versionThree, registry });
+            StringAssert.DoesNotContain("compound edit data", string.Join("\n", v3Errors.CastToStrings()));
+
+            object versionFour = fromJson.Invoke(null, new object[] { "{\"formatVersion\":4,\"title\":\"V4 Track\",\"canvasWidth\":24,\"canvasHeight\":14,\"objects\":" + objects + "}" });
+            IList v4Errors = (IList)validate.Invoke(null, new[] { versionFour, registry });
+            StringAssert.Contains("compound edit data", string.Join("\n", v4Errors.CastToStrings()));
+        }
+
+        [Test]
+        public void NonTrackObjects_IgnoreJsonUtilityGeneratedTrackIntersectionDefaults()
+        {
+            Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
+            Type validatorType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelValidator, Assembly-CSharp");
+            MethodInfo fromJson = documentType.GetMethod("FromJson", BindingFlags.Public | BindingFlags.Static);
+            MethodInfo validate = validatorType.GetMethod("Validate", BindingFlags.Public | BindingFlags.Static);
+            string emptyCompound = "\"trackIntersection\":{\"upperCurve\":{\"width\":0.5,\"points\":[]},\"lowerCurve\":{\"width\":0.5,\"points\":[]}}";
+            string json = "{\"formatVersion\":4,\"title\":\"Generated Defaults\",\"canvasWidth\":24,\"canvasHeight\":14,\"objects\":["
+                + "{\"id\":\"ball\",\"assetKey\":\"ball\",\"kind\":0,\"scale\":{\"x\":1,\"y\":1}," + emptyCompound + "},"
+                + "{\"id\":\"goal\",\"assetKey\":\"goal\",\"kind\":1,\"scale\":{\"x\":1,\"y\":1}," + emptyCompound + "}]}";
+            object document = fromJson.Invoke(null, new object[] { json });
+            IList objects = (IList)documentType.GetField("objects").GetValue(document);
+            Assert.That(objects[0].GetType().GetField("trackIntersection").GetValue(objects[0]), Is.Null);
+            Assert.That(objects[1].GetType().GetField("trackIntersection").GetValue(objects[1]), Is.Null);
+
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+            IList errors = (IList)validate.Invoke(null, new[] { document, registry });
+            StringAssert.DoesNotContain("trackIntersection", string.Join("\n", errors.CastToStrings()));
+        }
+
+        [Test]
+        public void Importer_RemovesTemplateBallAndGoalBeforeCreatingJsonObjects()
+        {
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+            GameObject ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/Ball.prefab");
+            GameObject goalPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/Goal.prefab");
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            try
+            {
+                GameObject ball = (GameObject)PrefabUtility.InstantiatePrefab(ballPrefab, scene);
+                GameObject goal = (GameObject)PrefabUtility.InstantiatePrefab(goalPrefab, scene);
+                GameObject survivor = new GameObject("Survivor");
+                SceneManager.MoveGameObjectToScene(survivor, scene);
+
+                Type importerType = Type.GetType("BallGame.Editor.CollaborativeLevelImporter, Assembly-CSharp-Editor");
+                MethodInfo removeTemplateObjects = importerType.GetMethod(
+                    "RemoveTemplateBallAndGoal",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+                removeTemplateObjects.Invoke(null, new object[] { scene, registry });
+
+                Assert.That(ball == null, Is.True);
+                Assert.That(goal == null, Is.True);
+                Assert.That(survivor == null, Is.False);
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void Importer_UsesLevelTemplateForNormalMode()
+        {
+            Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
+            Type importerType = Type.GetType("BallGame.Editor.CollaborativeLevelImporter, Assembly-CSharp-Editor");
+            MethodInfo getTemplate = importerType.GetMethod("GetTemplateScenePath", BindingFlags.NonPublic | BindingFlags.Static);
+            object normal = Activator.CreateInstance(documentType);
+            object lowestCost = Activator.CreateInstance(documentType);
+            documentType.GetField("mode").SetValue(normal, "Normal");
+            documentType.GetField("mode").SetValue(lowestCost, "LowestCost");
+
+            Assert.That(getTemplate.Invoke(null, new[] { normal }), Is.EqualTo("Assets/Scenes/NormalLevels/Level_Template.unity"));
+            Assert.That(getTemplate.Invoke(null, new[] { lowestCost }), Is.EqualTo("Assets/Scenes/NormalLevels/Level_Template.unity"));
+            Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/Scenes/NormalLevels/Level_Template.unity"), Is.Not.Null);
+        }
+
+        [Test]
+        public void LegacyDocument_DefaultsToNormalAndInvalidModeIsRejected()
+        {
+            Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
+            Type validatorType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelValidator, Assembly-CSharp");
+            MethodInfo fromJson = documentType.GetMethod("FromJson", BindingFlags.Public | BindingFlags.Static);
+            MethodInfo validate = validatorType.GetMethod("Validate", BindingFlags.Public | BindingFlags.Static);
+            string objects = "["
+                + "{\"id\":\"ball\",\"assetKey\":\"ball\",\"kind\":0,\"scale\":{\"x\":1,\"y\":1}},"
+                + "{\"id\":\"goal\",\"assetKey\":\"goal\",\"kind\":1,\"scale\":{\"x\":1,\"y\":1}}]";
+            object legacy = fromJson.Invoke(null, new object[] { "{\"formatVersion\":3,\"title\":\"Legacy\",\"canvasWidth\":24,\"canvasHeight\":14,\"objects\":" + objects + "}" });
+            Assert.That((string)documentType.GetField("mode").GetValue(legacy), Is.EqualTo("Normal"));
+
+            object invalid = fromJson.Invoke(null, new object[] { "{\"formatVersion\":3,\"title\":\"Invalid\",\"mode\":\"Arcade\",\"canvasWidth\":24,\"canvasHeight\":14,\"objects\":" + objects + "}" });
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+            IList errors = (IList)validate.Invoke(null, new[] { invalid, registry });
+            StringAssert.Contains("mode must be Normal or LowestCost", string.Join("\n", errors.CastToStrings()));
+        }
+
+        [Test]
+        public void Validator_RejectsInvalidManualToolStock()
+        {
+            Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
+            Type validatorType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelValidator, Assembly-CSharp");
+            MethodInfo fromJson = documentType.GetMethod("FromJson", BindingFlags.Public | BindingFlags.Static);
+            string json = "{\"formatVersion\":3,\"title\":\"Invalid Stock\",\"mode\":\"Normal\",\"canvasWidth\":24,\"canvasHeight\":14,"
+                + "\"toolStock\":[{\"assetKey\":\"plank\",\"count\":-1},{\"assetKey\":\"plank\",\"count\":2},{\"assetKey\":\"missing\",\"count\":1}],"
+                + "\"objects\":[{\"id\":\"ball\",\"assetKey\":\"ball\",\"kind\":0,\"scale\":{\"x\":1,\"y\":1}},"
+                + "{\"id\":\"goal\",\"assetKey\":\"goal\",\"kind\":1,\"scale\":{\"x\":1,\"y\":1}}]}";
+            object document = fromJson.Invoke(null, new object[] { json });
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+            MethodInfo validate = validatorType.GetMethod("Validate", BindingFlags.Public | BindingFlags.Static);
+            IList errors = (IList)validate.Invoke(null, new[] { document, registry });
+            string combined = string.Join("\n", errors.CastToStrings());
+            StringAssert.Contains("unique", combined);
+            StringAssert.Contains("cannot be negative", combined);
+            StringAssert.Contains("Unknown tool stock assetKey: missing", combined);
+        }
+
+        [Test]
+        public void CaptureDocument_PreservesManualToolStockWithoutSceneTools()
+        {
+            Type controllerType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDesignerController, Assembly-CSharp");
+            Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
+            MethodInfo fromJson = documentType.GetMethod("FromJson", BindingFlags.Public | BindingFlags.Static);
+            object document = fromJson.Invoke(null, new object[] { "{\"formatVersion\":3,\"title\":\"Stock\",\"mode\":\"Normal\",\"canvasWidth\":24,\"canvasHeight\":14,\"toolStock\":[{\"assetKey\":\"plank\",\"count\":4}]}" });
+            GameObject host = new GameObject("Inactive Designer Test");
+            host.SetActive(false);
+            try
+            {
+                Component controller = host.AddComponent(controllerType);
+                GameObject world = new GameObject("World");
+                world.transform.SetParent(host.transform, false);
+                controllerType.GetField("document", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, document);
+                controllerType.GetField("worldRoot", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, world.transform);
+                MethodInfo capture = controllerType.GetMethod("CaptureDocument", BindingFlags.NonPublic | BindingFlags.Instance);
+                object captured = capture.Invoke(controller, null);
+                IList stock = (IList)documentType.GetField("toolStock").GetValue(captured);
+                Assert.That(stock.Count, Is.EqualTo(1));
+                Assert.That((string)stock[0].GetType().GetField("assetKey").GetValue(stock[0]), Is.EqualTo("plank"));
+                Assert.That((int)stock[0].GetType().GetField("count").GetValue(stock[0]), Is.EqualTo(4));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void Importer_ConfiguresNormalAndLowestCostDefinitions()
+        {
+            Type documentType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDocument, Assembly-CSharp");
+            Type levelDefinitionType = Type.GetType("BallGame.Core.LevelDefinition, Assembly-CSharp");
+            Type importerType = Type.GetType("BallGame.Editor.CollaborativeLevelImporter, Assembly-CSharp-Editor");
+            MethodInfo fromJson = documentType.GetMethod("FromJson", BindingFlags.Public | BindingFlags.Static);
+            MethodInfo configure = importerType.GetMethod("ConfigureLevelDefinition", BindingFlags.NonPublic | BindingFlags.Static);
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+            UnityEngine.Object catalog = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/Tools/ToolCatalog.asset");
+            ScriptableObject normal = ScriptableObject.CreateInstance(levelDefinitionType);
+            ScriptableObject lowestCost = ScriptableObject.CreateInstance(levelDefinitionType);
+            try
+            {
+                object normalDocument = fromJson.Invoke(null, new object[] { "{\"formatVersion\":3,\"title\":\"Normal Level\",\"mode\":\"Normal\",\"toolStock\":[{\"assetKey\":\"plank\",\"count\":3},{\"assetKey\":\"spring\",\"count\":0}]}" });
+                configure.Invoke(null, new[] { normal, normalDocument, registry, null });
+                SerializedObject normalSerialized = new SerializedObject(normal);
+                Assert.That(normalSerialized.FindProperty("mode").enumValueIndex, Is.EqualTo(0));
+                Assert.That(normalSerialized.FindProperty("toolCatalog").objectReferenceValue, Is.Null);
+                Assert.That(normalSerialized.FindProperty("tools").arraySize, Is.EqualTo(1));
+                Assert.That(normalSerialized.FindProperty("tools").GetArrayElementAtIndex(0).FindPropertyRelative("count").intValue, Is.EqualTo(3));
+
+                object lowestDocument = fromJson.Invoke(null, new object[] { "{\"formatVersion\":3,\"title\":\"Lowest Level\",\"mode\":\"LowestCost\",\"toolStock\":[{\"assetKey\":\"plank\",\"count\":3}]}" });
+                configure.Invoke(null, new[] { lowestCost, lowestDocument, registry, catalog });
+                SerializedObject lowestSerialized = new SerializedObject(lowestCost);
+                Assert.That(lowestSerialized.FindProperty("mode").enumValueIndex, Is.EqualTo(1));
+                Assert.That(lowestSerialized.FindProperty("toolCatalog").objectReferenceValue, Is.EqualTo(catalog));
+                Assert.That(lowestSerialized.FindProperty("tools").arraySize, Is.EqualTo(0));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(normal);
+                UnityEngine.Object.DestroyImmediate(lowestCost);
             }
         }
 

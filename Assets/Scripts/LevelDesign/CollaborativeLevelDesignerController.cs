@@ -13,16 +13,24 @@ namespace BallGame.LevelDesign
     public sealed class CollaborativeLevelDesignerController : MonoBehaviour
     {
         private const string RegistryResourcePath = "LevelDesigner/CollaborativeLevelAssetRegistry";
+        private const string LevelSettingsPrefabResourcePath = "LevelDesigner/LevelSettingsPanel";
         private const string BackgroundResourcePath = "Prefabs/WorldBackground";
         private const float DefaultCameraSize = 7f;
         private const float CanvasPadding = 2f;
         private const float MinimumCanvasWidth = 24f;
         private const float MinimumCanvasHeight = 14f;
+        private const int DefaultClickSortingOrder = 5;
+        private const float PaletteHeight = 120f;
+        private const float InspectorWidth = 350f;
+        private const float PaletteCellWidth = 230f;
+        private const float PaletteCellHeight = 48f;
+        private const float PaletteCellSpacing = 10f;
         private readonly Stack<string> undo = new Stack<string>();
         private readonly Stack<string> redo = new Stack<string>();
         private readonly List<SpriteRenderer> selectedRenderers = new List<SpriteRenderer>();
         private readonly List<Color> selectedRendererColors = new List<Color>();
         private readonly List<LineRenderer> originMarkerLines = new List<LineRenderer>();
+        private readonly Dictionary<string, TMP_InputField> levelStockInputs = new Dictionary<string, TMP_InputField>(StringComparer.Ordinal);
         private CollaborativeLevelAssetRegistry registry;
         private CollaborativeLevelDocument document = new CollaborativeLevelDocument();
         private Camera worldCamera;
@@ -42,6 +50,15 @@ namespace BallGame.LevelDesign
         private TMP_InputField sizeXInput;
         private TMP_InputField sizeYInput;
         private TMP_InputField splineWidthInput;
+        private TMP_Dropdown trackPartDropdown;
+        private GameObject trackIntersectionInfo;
+        private TMP_InputField trackEntryXInput;
+        private TMP_InputField trackEntryYInput;
+        private TMP_InputField trackEntryRotationInput;
+        private GameObject levelSettingsPanel;
+        private TMP_Dropdown levelModeDropdown;
+        private TMP_Text levelSettingsHint;
+        private TMP_Text levelSettingsValidation;
         private bool dragging;
         private bool canvasPanning;
         private Vector2 dragOffset;
@@ -63,6 +80,11 @@ namespace BallGame.LevelDesign
 
         private void Update()
         {
+            if (levelSettingsPanel != null && levelSettingsPanel.activeSelf)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) CloseLevelSettings();
+                return;
+            }
             HandleCamera();
             if (simulating)
             {
@@ -223,24 +245,27 @@ namespace BallGame.LevelDesign
             AddButton(top, "Redo", new Vector2(590f, 0f), Redo);
             AddButton(top, "Reset", new Vector2(720f, 0f), ResetView);
             AddButton(top, "Test", new Vector2(850f, 0f), ToggleSimulation);
+            Button settingsButton = AddButton(top, "Level Settings", new Vector2(1010f, 0f), OpenLevelSettings);
+            settingsButton.GetComponent<RectTransform>().sizeDelta = new Vector2(150f, 46f);
             statusText = AddText(top, "Status", new Vector2(1220f, 0f), new Vector2(880f, 50f), 20f, TextAlignmentOptions.MidlineRight);
             RectTransform statusRect = statusText.rectTransform;
             statusRect.anchorMin = new Vector2(0f, 0f);
             statusRect.anchorMax = new Vector2(1f, 1f);
             statusRect.pivot = new Vector2(0.5f, 0.5f);
-            statusRect.offsetMin = new Vector2(920f, 8f);
+            statusRect.offsetMin = new Vector2(1100f, 8f);
             statusRect.offsetMax = new Vector2(-20f, -8f);
 
             RectTransform palette = CreatePanel(canvas.transform, "Palette", new Color(0.96f, 0.95f, 0.90f, 0.97f));
-            Anchor(palette, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(270f, -68f), new Vector2(0f, -34f));
-            AddText(palette, "Title", new Vector2(135f, -34f), new Vector2(240f, 44f), 26f, TextAlignmentOptions.Center);
+            ConfigureBottomPaletteRect(palette);
+            AddText(palette, "Title", new Vector2(65f, 60f), new Vector2(110f, 44f), 26f, TextAlignmentOptions.Center);
             palette.Find("Title").GetComponent<TMP_Text>().text = "OBJECTS";
+            RectTransform paletteContent = CreatePaletteScrollView(palette);
             if (registry != null)
             {
                 for (int i = 0; i < registry.Entries.Count; i++)
                 {
                     CollaborativeLevelAssetEntry captured = registry.Entries[i];
-                    Button button = AddButton(palette, captured.assetKey, new Vector2(135f, -92f - i * 58f), () => AddObject(captured));
+                    Button button = AddButton(paletteContent, captured.assetKey, Vector2.zero, () => AddObject(captured));
                     RectTransform rect = button.GetComponent<RectTransform>();
                     rect.sizeDelta = new Vector2(230f, 48f);
                 }
@@ -256,6 +281,7 @@ namespace BallGame.LevelDesign
             AddButton(inspector, "Add Point", new Vector2(80f, -220f), AddSplinePoint);
             AddButton(inspector, "Remove Point", new Vector2(220f, -220f), RemoveSplinePoint);
             titleInput = AddInput(inspector, "Level title", new Vector2(150f, -285f), value => document.title = value);
+            ConfigureLevelTitleInput();
             authorInput = AddInput(inspector, "Author", new Vector2(150f, -335f), value => document.author = value);
             xInput = AddInput(inspector, "X", new Vector2(80f, -390f), _ => ApplyInspectorTransform());
             yInput = AddInput(inspector, "Y", new Vector2(220f, -390f), _ => ApplyInspectorTransform());
@@ -267,9 +293,16 @@ namespace BallGame.LevelDesign
             splineWidthInput = AddInput(inspector, "Path width", new Vector2(150f, -610f), _ => ApplyInspectorTransform());
             AddButton(inspector, "Closed", new Vector2(80f, -665f), ToggleSplineClosed);
             AddButton(inspector, "Collision", new Vector2(220f, -665f), ToggleSplineCollision);
+            trackPartDropdown = AddDropdown(inspector, "Track Part", new Vector2(150f, -720f), new Vector2(260f, 44f),
+                new[] { "Upper Curve", "Lower Curve", "Upper Entry A", "Lower Entry A" });
+            trackPartDropdown.onValueChanged.AddListener(_ => RefreshTrackPartSelection());
+            trackEntryXInput = AddInput(inspector, "Entry X", new Vector2(80f, -775f), _ => ApplyInspectorTransform());
+            trackEntryYInput = AddInput(inspector, "Entry Y", new Vector2(220f, -775f), _ => ApplyInspectorTransform());
+            trackEntryRotationInput = AddInput(inspector, "Entry Rotation", new Vector2(150f, -830f), _ => ApplyInspectorTransform());
             titleInput.SetTextWithoutNotify(document.title);
             authorInput.SetTextWithoutNotify(document.author);
             RefreshSelection();
+            BuildLevelSettingsPanel(canvas.transform);
         }
 
         private static void EnsureEventSystem()
@@ -296,6 +329,7 @@ namespace BallGame.LevelDesign
             ConfigureStatusRect(statusText);
             selectionText = FindComponent<TMP_Text>(root, "Selection");
             titleInput = BindInput(root, "Level titleInput", value => document.title = value);
+            ConfigureLevelTitleInput();
             authorInput = BindInput(root, "AuthorInput", value => document.author = value);
             xInput = BindInput(root, "XInput", _ => ApplyInspectorTransform());
             yInput = BindInput(root, "YInput", _ => ApplyInspectorTransform());
@@ -303,6 +337,13 @@ namespace BallGame.LevelDesign
             sizeXInput = BindInput(root, "Size XInput", _ => ApplyInspectorTransform());
             sizeYInput = BindInput(root, "Size YInput", _ => ApplyInspectorTransform());
             splineWidthInput = BindInput(root, "Path widthInput", _ => ApplyInspectorTransform());
+            trackPartDropdown = FindComponent<TMP_Dropdown>(root, "Track PartDropdown");
+            RectTransform trackInfoRect = FindComponent<RectTransform>(root, "TrackIntersectionInfo");
+            trackIntersectionInfo = trackInfoRect != null ? trackInfoRect.gameObject : null;
+            if (trackPartDropdown != null) trackPartDropdown.onValueChanged.AddListener(_ => RefreshTrackPartSelection());
+            trackEntryXInput = BindInput(root, "Entry XInput", _ => ApplyInspectorTransform());
+            trackEntryYInput = BindInput(root, "Entry YInput", _ => ApplyInspectorTransform());
+            trackEntryRotationInput = BindInput(root, "Entry RotationInput", _ => ApplyInspectorTransform());
 
             BindButton(root, "NewButton", NewDocument);
             BindButton(root, "ImportButton", RequestImport);
@@ -311,6 +352,7 @@ namespace BallGame.LevelDesign
             BindButton(root, "RedoButton", Redo);
             BindButton(root, "ResetButton", ResetView);
             BindButton(root, "TestButton", ToggleSimulation);
+            BindButton(root, "Level SettingsButton", OpenLevelSettings);
             BindButton(root, "Rotate -Button", () => RotateSelected(-15f));
             BindButton(root, "Rotate +Button", () => RotateSelected(15f));
             BindButton(root, "DuplicateButton", DuplicateSelected);
@@ -332,6 +374,7 @@ namespace BallGame.LevelDesign
             titleInput.SetTextWithoutNotify(document.title);
             authorInput.SetTextWithoutNotify(document.author);
             RefreshSelection();
+            BuildLevelSettingsPanel(root);
             return true;
         }
 
@@ -342,8 +385,193 @@ namespace BallGame.LevelDesign
             rect.anchorMin = new Vector2(0f, 0f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.offsetMin = new Vector2(920f, 8f);
+            rect.offsetMin = new Vector2(1100f, 8f);
             rect.offsetMax = new Vector2(-20f, -8f);
+        }
+
+        private void BuildLevelSettingsPanel(Transform canvasRoot)
+        {
+            if (levelSettingsPanel != null || canvasRoot == null) return;
+
+            GameObject prefab = Resources.Load<GameObject>(LevelSettingsPrefabResourcePath);
+            if (prefab != null)
+            {
+                GameObject instance = Instantiate(prefab, canvasRoot, false);
+                instance.name = "LevelSettingsPanel";
+                BindLevelSettingsPanel(instance.transform);
+                return;
+            }
+
+            RectTransform overlay = CreatePanel(canvasRoot, "LevelSettingsPanel", new Color(0f, 0f, 0f, 0.58f));
+            overlay.anchorMin = Vector2.zero;
+            overlay.anchorMax = Vector2.one;
+            overlay.offsetMin = Vector2.zero;
+            overlay.offsetMax = Vector2.zero;
+            overlay.SetAsLastSibling();
+
+            RectTransform dialog = CreatePanel(overlay, "LevelSettingsDialog", new Color(0.12f, 0.14f, 0.16f, 0.99f));
+            Anchor(dialog, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(640f, 760f), Vector2.zero);
+            AddText(dialog, "LevelSettingsTitle", new Vector2(320f, -38f), new Vector2(580f, 48f), 28f, TextAlignmentOptions.Center).text = "LEVEL SETTINGS";
+            AddText(dialog, "ModeLabel", new Vector2(105f, -98f), new Vector2(150f, 38f), 19f, TextAlignmentOptions.MidlineLeft).text = "Mode";
+            AddDropdown(dialog, "LevelMode", new Vector2(390f, -98f), new Vector2(320f, 44f), new[] { "Normal", "LowestCost" });
+            AddText(dialog, "ModeHint", new Vector2(320f, -145f), new Vector2(570f, 46f), 16f, TextAlignmentOptions.Center);
+
+            int row = 0;
+            if (registry != null)
+            {
+                for (int i = 0; i < registry.Entries.Count; i++)
+                {
+                    CollaborativeLevelAssetEntry entry = registry.Entries[i];
+                    if (entry == null || !entry.IsInventoryTool) continue;
+                    float y = -200f - row * 48f;
+                    AddText(dialog, entry.assetKey + " StockLabel", new Vector2(210f, y), new Vector2(300f, 38f), 18f, TextAlignmentOptions.MidlineLeft).text = entry.assetKey;
+                    TMP_InputField input = AddInput(dialog, entry.assetKey + " Stock", new Vector2(475f, y), _ => { });
+                    input.contentType = TMP_InputField.ContentType.IntegerNumber;
+                    input.characterLimit = 9;
+                    input.SetTextWithoutNotify("0");
+                    row++;
+                }
+            }
+
+            TMP_Text validation = AddText(dialog, "LevelSettingsValidation", new Vector2(320f, -640f), new Vector2(570f, 42f), 16f, TextAlignmentOptions.Center);
+            validation.color = new Color(1f, 0.45f, 0.38f, 1f);
+            AddButton(dialog, "Save Settings", new Vector2(220f, -700f), () => { });
+            AddButton(dialog, "Cancel Settings", new Vector2(420f, -700f), () => { });
+            BindLevelSettingsPanel(overlay);
+        }
+
+        private void BindLevelSettingsPanel(Transform panelRoot)
+        {
+            levelSettingsPanel = panelRoot.gameObject;
+            levelModeDropdown = FindComponent<TMP_Dropdown>(panelRoot, "LevelModeDropdown");
+            levelSettingsHint = FindComponent<TMP_Text>(panelRoot, "ModeHint");
+            levelSettingsValidation = FindComponent<TMP_Text>(panelRoot, "LevelSettingsValidation");
+            levelStockInputs.Clear();
+            if (registry != null)
+            {
+                for (int i = 0; i < registry.Entries.Count; i++)
+                {
+                    CollaborativeLevelAssetEntry entry = registry.Entries[i];
+                    if (entry == null || !entry.IsInventoryTool) continue;
+                    TMP_InputField input = FindComponent<TMP_InputField>(panelRoot, entry.assetKey + " StockInput");
+                    if (input != null) levelStockInputs.Add(entry.assetKey, input);
+                }
+            }
+            if (levelModeDropdown != null) levelModeDropdown.onValueChanged.AddListener(_ => RefreshLevelSettingsMode());
+            BindButton(panelRoot, "Save SettingsButton", SaveLevelSettings);
+            BindButton(panelRoot, "Cancel SettingsButton", CloseLevelSettings);
+            levelSettingsPanel.SetActive(false);
+        }
+
+        private void OpenLevelSettings()
+        {
+            if (levelSettingsPanel == null || simulating) return;
+            Dictionary<string, int> counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (document.toolStock != null)
+            {
+                for (int i = 0; i < document.toolStock.Count; i++)
+                {
+                    CollaborativeToolStock stock = document.toolStock[i];
+                    if (stock != null && !string.IsNullOrWhiteSpace(stock.assetKey)) counts[stock.assetKey] = Mathf.Max(0, stock.count);
+                }
+            }
+            foreach (KeyValuePair<string, TMP_InputField> item in levelStockInputs)
+                item.Value.SetTextWithoutNotify(counts.TryGetValue(item.Key, out int count) ? count.ToString(CultureInfo.InvariantCulture) : "0");
+            levelModeDropdown.SetValueWithoutNotify(document.mode == "LowestCost" ? 1 : 0);
+            levelSettingsValidation.text = string.Empty;
+            RefreshLevelSettingsMode();
+            levelSettingsPanel.SetActive(true);
+            levelSettingsPanel.transform.SetAsLastSibling();
+        }
+
+        private void CloseLevelSettings()
+        {
+            if (levelSettingsPanel != null) levelSettingsPanel.SetActive(false);
+        }
+
+        private void RefreshLevelSettingsMode()
+        {
+            bool lowestCost = levelModeDropdown != null && levelModeDropdown.value == 1;
+            foreach (TMP_InputField input in levelStockInputs.Values) input.interactable = !lowestCost;
+            if (levelSettingsHint != null)
+                levelSettingsHint.text = lowestCost
+                    ? "Shared ToolCatalog · Unlimited supply · Cost scoring"
+                    : "Set player inventory independently from objects placed in the scene";
+        }
+
+        private void SaveLevelSettings()
+        {
+            List<CollaborativeToolStock> stock = new List<CollaborativeToolStock>();
+            if (registry == null)
+            {
+                levelSettingsValidation.text = "Asset registry is missing.";
+                return;
+            }
+            for (int i = 0; i < registry.Entries.Count; i++)
+            {
+                CollaborativeLevelAssetEntry entry = registry.Entries[i];
+                if (entry == null || !entry.IsInventoryTool || !levelStockInputs.TryGetValue(entry.assetKey, out TMP_InputField input)) continue;
+                if (!int.TryParse(input.text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int count) || count < 0)
+                {
+                    levelSettingsValidation.text = entry.assetKey + " must be a non-negative integer.";
+                    return;
+                }
+                if (count > 0) stock.Add(new CollaborativeToolStock { assetKey = entry.assetKey, count = count });
+            }
+
+            PushUndo();
+            document.mode = levelModeDropdown != null && levelModeDropdown.value == 1 ? "LowestCost" : "Normal";
+            document.toolStock = stock;
+            CloseLevelSettings();
+            SetStatus("Level settings saved: " + document.mode);
+        }
+
+        private static TMP_Dropdown AddDropdown(Transform parent, string name, Vector2 position, Vector2 size, string[] options)
+        {
+            GameObject root = new GameObject(name + "Dropdown", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(TMP_Dropdown));
+            root.transform.SetParent(parent, false);
+            RectTransform rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            Image image = root.GetComponent<Image>();
+            image.color = new Color(0.22f, 0.24f, 0.27f, 1f);
+
+            TMP_Text caption = AddText(root.transform, "Label", new Vector2(size.x * 0.5f - 18f, -size.y * 0.5f), new Vector2(size.x - 52f, size.y), 18f, TextAlignmentOptions.MidlineLeft);
+            AddText(root.transform, "Arrow", new Vector2(size.x - 25f, -size.y * 0.5f), new Vector2(30f, size.y), 20f, TextAlignmentOptions.Center).text = "▼";
+
+            RectTransform template = CreatePanel(root.transform, "Template", new Color(0.18f, 0.20f, 0.23f, 1f));
+            template.anchorMin = new Vector2(0f, 0f);
+            template.anchorMax = new Vector2(1f, 0f);
+            template.pivot = new Vector2(0.5f, 1f);
+            template.anchoredPosition = new Vector2(0f, -4f);
+            template.sizeDelta = new Vector2(0f, 88f);
+
+            GameObject itemObject = new GameObject("Item", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Toggle));
+            itemObject.transform.SetParent(template, false);
+            RectTransform itemRect = itemObject.GetComponent<RectTransform>();
+            itemRect.anchorMin = new Vector2(0f, 1f);
+            itemRect.anchorMax = new Vector2(1f, 1f);
+            itemRect.pivot = new Vector2(0.5f, 1f);
+            itemRect.anchoredPosition = Vector2.zero;
+            itemRect.sizeDelta = new Vector2(0f, 40f);
+            Image itemImage = itemObject.GetComponent<Image>();
+            itemImage.color = new Color(0.28f, 0.30f, 0.34f, 1f);
+            Toggle itemToggle = itemObject.GetComponent<Toggle>();
+            itemToggle.targetGraphic = itemImage;
+            TMP_Text itemText = AddText(itemObject.transform, "Item Label", new Vector2(size.x * 0.5f, -20f), new Vector2(size.x - 24f, 40f), 18f, TextAlignmentOptions.MidlineLeft);
+
+            TMP_Dropdown dropdown = root.GetComponent<TMP_Dropdown>();
+            dropdown.targetGraphic = image;
+            dropdown.template = template;
+            dropdown.captionText = caption;
+            dropdown.itemText = itemText;
+            dropdown.options.Clear();
+            for (int i = 0; i < options.Length; i++) dropdown.options.Add(new TMP_Dropdown.OptionData(options[i]));
+            dropdown.RefreshShownValue();
+            template.gameObject.SetActive(false);
+            return dropdown;
         }
 
         private static T FindComponent<T>(Transform root, string objectName) where T : Component
@@ -365,6 +593,35 @@ namespace BallGame.LevelDesign
             TMP_InputField input = FindComponent<TMP_InputField>(root, objectName);
             if (input != null) input.onEndEdit.AddListener(action);
             return input;
+        }
+
+        private void ConfigureLevelTitleInput()
+        {
+            if (titleInput == null) return;
+            titleInput.contentType = TMP_InputField.ContentType.Standard;
+            titleInput.characterValidation = TMP_InputField.CharacterValidation.None;
+            titleInput.lineType = TMP_InputField.LineType.SingleLine;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            CollaborativeWebGLTextInputBridge bridge = titleInput.GetComponent<CollaborativeWebGLTextInputBridge>();
+            if (bridge == null) bridge = titleInput.gameObject.AddComponent<CollaborativeWebGLTextInputBridge>();
+            bridge.Configure(titleInput, gameObject, nameof(OnWebGLTitleInputChanged), nameof(OnWebGLTitleInputEnded));
+#endif
+        }
+
+        public void OnWebGLTitleInputChanged(string value)
+        {
+            string title = value ?? string.Empty;
+            if (titleInput != null) titleInput.SetTextWithoutNotify(title);
+            document.title = title;
+        }
+
+        public void OnWebGLTitleInputEnded(string value)
+        {
+            OnWebGLTitleInputChanged(value);
+            CollaborativeWebGLTextInputBridge.RestoreUnityKeyboardCapture();
+            if (titleInput != null) titleInput.DeactivateInputField();
+            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
         }
 
         private void AddObject(CollaborativeLevelAssetEntry entry)
@@ -445,7 +702,34 @@ namespace BallGame.LevelDesign
             if (dragging && draggedSplineHandle != null && Input.GetMouseButton(0))
             {
                 CollaborativeLevelObject owner = draggedSplineHandle.Owner;
-                if (owner != null && draggedSplineHandle.PointIndex < owner.SplinePoints.Count)
+                if (owner != null && draggedSplineHandle.IsTrackIntersection)
+                {
+                    TrackIntersectionEditable2D editable = owner.GetComponent<TrackIntersectionEditable2D>();
+                    CollaborativeTrackIntersectionData data = owner.TrackIntersection;
+                    if (editable != null && data != null)
+                    {
+                        if (draggedSplineHandle.IsEntry)
+                        {
+                            Vector2 local = owner.transform.InverseTransformPoint(world);
+                            float rotation = editable.GetEntryLocalRotation(draggedSplineHandle.Upper);
+                            editable.SetEntryLocalPose(draggedSplineHandle.Upper, local, rotation, data);
+                        }
+                        else
+                        {
+                            CollaborativeTrackCurveData curve = draggedSplineHandle.Upper ? data.upperCurve : data.lowerCurve;
+                            SplineContainerTransformPoint(editable, draggedSplineHandle.Upper, world, out Vector2 local);
+                            if (curve != null && curve.points != null && draggedSplineHandle.PointIndex >= 0
+                                && draggedSplineHandle.PointIndex < curve.points.Count)
+                            {
+                                curve.points[draggedSplineHandle.PointIndex].position = local;
+                                editable.ApplyCurve(draggedSplineHandle.Upper, curve);
+                                editable.ApplyEntries(data);
+                            }
+                        }
+                        draggedSplineHandle.transform.position = world;
+                    }
+                }
+                else if (owner != null && draggedSplineHandle.PointIndex < owner.SplinePoints.Count)
                 {
                     owner.SplinePoints[draggedSplineHandle.PointIndex].position = owner.transform.InverseTransformPoint(world);
                     ApplySpline(owner);
@@ -497,14 +781,20 @@ namespace BallGame.LevelDesign
             if (movedObject) RefreshSelection();
         }
 
+        private static void SplineContainerTransformPoint(TrackIntersectionEditable2D editable, bool upper, Vector2 world, out Vector2 local)
+        {
+            Transform splineTransform = editable.GetSpline(upper).transform;
+            local = splineTransform.InverseTransformPoint(world);
+        }
+
         private CollaborativeLevelObject FindObjectAt(Vector2 world, Collider2D[] hits)
         {
-            CollaborativeLevelObject best = null;
-            int bestSortingOrder = int.MinValue;
+            HashSet<CollaborativeLevelObject> candidates = new HashSet<CollaborativeLevelObject>();
             for (int i = 0; i < hits.Length; i++)
             {
+                if (hits[i] == null) continue;
                 CollaborativeLevelObject candidate = hits[i].GetComponentInParent<CollaborativeLevelObject>();
-                ConsiderCandidate(candidate, ref best, ref bestSortingOrder);
+                if (candidate != null) candidates.Add(candidate);
             }
 
             // Rigidbody2D.simulated=false also removes its colliders from physics queries.
@@ -516,22 +806,36 @@ namespace BallGame.LevelDesign
                 for (int j = 0; j < renderers.Length; j++)
                 {
                     if (!renderers[j].bounds.Contains(world)) continue;
-                    ConsiderCandidate(objects[i], ref best, ref bestSortingOrder);
+                    candidates.Add(objects[i]);
                     break;
                 }
             }
+
+            CollaborativeLevelObject best = null;
+            int bestClickSortingOrder = int.MinValue;
+            int bestSiblingIndex = int.MinValue;
+            foreach (CollaborativeLevelObject candidate in candidates)
+                ConsiderCandidate(candidate, ref best, ref bestClickSortingOrder, ref bestSiblingIndex);
             return best;
         }
 
-        private static void ConsiderCandidate(CollaborativeLevelObject candidate, ref CollaborativeLevelObject best, ref int bestSortingOrder)
+        private void ConsiderCandidate(
+            CollaborativeLevelObject candidate,
+            ref CollaborativeLevelObject best,
+            ref int bestClickSortingOrder,
+            ref int bestSiblingIndex)
         {
             if (candidate == null) return;
-            SpriteRenderer[] renderers = candidate.GetComponentsInChildren<SpriteRenderer>(true);
-            int sortingOrder = int.MinValue + 1;
-            for (int i = 0; i < renderers.Length; i++) sortingOrder = Mathf.Max(sortingOrder, renderers[i].sortingOrder);
-            if (best != null && sortingOrder < bestSortingOrder) return;
+            CollaborativeLevelAssetEntry entry = registry != null ? registry.Find(candidate.AssetKey) : null;
+            int clickSortingOrder = entry != null && entry.toolDefinition != null
+                ? entry.toolDefinition.ClickSortingOrder
+                : DefaultClickSortingOrder;
+            int siblingIndex = candidate.transform.GetSiblingIndex();
+            if (best != null && (clickSortingOrder < bestClickSortingOrder
+                || (clickSortingOrder == bestClickSortingOrder && siblingIndex <= bestSiblingIndex))) return;
             best = candidate;
-            bestSortingOrder = sortingOrder;
+            bestClickSortingOrder = clickSortingOrder;
+            bestSiblingIndex = siblingIndex;
         }
 
         private static CollaborativeSplineHandle FindSplineHandle(Collider2D[] hits)
@@ -546,6 +850,7 @@ namespace BallGame.LevelDesign
 
         private void HandleCamera()
         {
+            if (IsPointerOverUi()) return;
             float scroll = Input.mouseScrollDelta.y;
             if (Mathf.Abs(scroll) > 0.01f) worldCamera.orthographicSize = Mathf.Clamp(worldCamera.orthographicSize - scroll, 3f, 10f);
             if (Input.GetMouseButton(2))
@@ -567,6 +872,7 @@ namespace BallGame.LevelDesign
 
         private void NewDocument()
         {
+            CloseLevelSettings();
             PushUndo();
             LoadDocument(new CollaborativeLevelDocument());
             SetStatus("New level");
@@ -600,6 +906,7 @@ namespace BallGame.LevelDesign
             ApplyRecordSize(clone, record);
             if (record.assetKey == "portal") ApplyPortalPair(clone, marker.Properties);
             if (marker.Kind == CollaborativeObjectKind.SplineTool) ApplySpline(marker);
+            ApplyTrackIntersection(marker);
             Select(marker);
         }
 
@@ -664,20 +971,16 @@ namespace BallGame.LevelDesign
 
         private CollaborativeLevelDocument CaptureDocument()
         {
-            document.formatVersion = 3;
+            document.formatVersion = 4;
             document.objects.Clear();
-            document.toolStock.Clear();
-            Dictionary<string, int> stock = new Dictionary<string, int>(StringComparer.Ordinal);
             CollaborativeLevelObject[] objects = worldRoot.GetComponentsInChildren<CollaborativeLevelObject>(true);
             UpdateCanvasBounds(objects);
             for (int i = 0; i < objects.Length; i++)
-            {
                 document.objects.Add(objects[i].ToRecord());
-                if (objects[i].Kind == CollaborativeObjectKind.Tool)
-                    stock[objects[i].AssetKey] = stock.TryGetValue(objects[i].AssetKey, out int count) ? count + 1 : 1;
-            }
-            foreach (KeyValuePair<string, int> item in stock)
-                document.toolStock.Add(new CollaborativeToolStock { assetKey = item.Key, count = item.Value });
+            if (document.toolStock == null) document.toolStock = new List<CollaborativeToolStock>();
+            for (int i = document.toolStock.Count - 1; i >= 0; i--)
+                if (document.toolStock[i] != null && document.toolStock[i].count == 0)
+                    document.toolStock.RemoveAt(i);
             return document;
         }
 
@@ -727,6 +1030,7 @@ namespace BallGame.LevelDesign
 
         private void LoadDocument(CollaborativeLevelDocument source)
         {
+            CloseLevelSettings();
             for (int i = worldRoot.childCount - 1; i >= 0; i--) Destroy(worldRoot.GetChild(i).gameObject);
             document = source;
             if (titleInput != null) titleInput.SetTextWithoutNotify(document.title);
@@ -746,6 +1050,7 @@ namespace BallGame.LevelDesign
                 if (record.assetKey == "portal") ApplyPortalPair(instance, marker.Properties);
                 if (record.kind == CollaborativeObjectKind.SplineTool)
                     ApplySpline(marker);
+                ApplyTrackIntersection(marker);
                 SetPhysics(instance, false);
                 nextObjectId++;
             }
@@ -784,6 +1089,8 @@ namespace BallGame.LevelDesign
         private void Select(CollaborativeLevelObject marker)
         {
             RestoreSelectionOpacity();
+            if (marker != selected && marker != null && marker.GetComponent<TrackIntersectionEditable2D>() != null && trackPartDropdown != null)
+                trackPartDropdown.SetValueWithoutNotify(0);
             selected = marker;
             ApplySelectionOpacity();
             RefreshSelection();
@@ -816,7 +1123,20 @@ namespace BallGame.LevelDesign
 
         private void AddSplinePoint()
         {
-            if (selected == null || selected.Kind != CollaborativeObjectKind.SplineTool || simulating) return;
+            if (selected == null || simulating) return;
+            if (TryGetActiveTrackPart(out TrackIntersectionEditable2D track, out CollaborativeTrackIntersectionData trackData, out bool upper, out bool entry))
+            {
+                if (entry) return;
+                CollaborativeTrackCurveData curve = upper ? trackData.upperCurve : trackData.lowerCurve;
+                PushUndo();
+                Vector2 trackPosition = curve.points.Count == 0 ? Vector2.zero : curve.points[curve.points.Count - 1].position + Vector2.right;
+                curve.points.Add(NewSplinePoint(trackPosition.x, trackPosition.y));
+                track.ApplyCurve(upper, curve);
+                track.ApplyEntries(trackData);
+                RebuildSplineHandles();
+                return;
+            }
+            if (selected.Kind != CollaborativeObjectKind.SplineTool) return;
             PushUndo();
             Vector2 position = selected.SplinePoints.Count == 0 ? Vector2.zero : selected.SplinePoints[selected.SplinePoints.Count - 1].position + Vector2.right;
             selected.SplinePoints.Add(NewSplinePoint(position.x, position.y));
@@ -826,7 +1146,20 @@ namespace BallGame.LevelDesign
 
         private void RemoveSplinePoint()
         {
-            if (selected == null || selected.Kind != CollaborativeObjectKind.SplineTool || selected.SplinePoints.Count <= 2 || simulating) return;
+            if (selected == null || simulating) return;
+            if (TryGetActiveTrackPart(out TrackIntersectionEditable2D track, out CollaborativeTrackIntersectionData trackData, out bool upper, out bool entry))
+            {
+                if (entry) return;
+                CollaborativeTrackCurveData curve = upper ? trackData.upperCurve : trackData.lowerCurve;
+                if (curve.points.Count <= 2) return;
+                PushUndo();
+                curve.points.RemoveAt(curve.points.Count - 1);
+                track.ApplyCurve(upper, curve);
+                track.ApplyEntries(trackData);
+                RebuildSplineHandles();
+                return;
+            }
+            if (selected.Kind != CollaborativeObjectKind.SplineTool || selected.SplinePoints.Count <= 2) return;
             PushUndo();
             selected.SplinePoints.RemoveAt(selected.SplinePoints.Count - 1);
             ApplySpline(selected);
@@ -837,7 +1170,21 @@ namespace BallGame.LevelDesign
         {
             if (splineHandleRoot == null) return;
             for (int i = splineHandleRoot.childCount - 1; i >= 0; i--) Destroy(splineHandleRoot.GetChild(i).gameObject);
-            if (selected == null || selected.Kind != CollaborativeObjectKind.SplineTool) return;
+            if (selected == null) return;
+            if (TryGetActiveTrackPart(out TrackIntersectionEditable2D track, out CollaborativeTrackIntersectionData trackData, out bool upper, out bool entry))
+            {
+                if (entry)
+                {
+                    CreateTrackHandle(track.GetEntry(upper).position, new Color(0.20f, 0.78f, 1f, 1f), -1, upper, true);
+                    return;
+                }
+                CollaborativeTrackCurveData curve = upper ? trackData.upperCurve : trackData.lowerCurve;
+                Transform splineTransform = track.GetSpline(upper).transform;
+                for (int i = 0; i < curve.points.Count; i++)
+                    CreateTrackHandle(splineTransform.TransformPoint(curve.points[i].position), new Color(1f, 0.72f, 0.18f, 1f), i, upper, false);
+                return;
+            }
+            if (selected.Kind != CollaborativeObjectKind.SplineTool) return;
             for (int i = 0; i < selected.SplinePoints.Count; i++)
             {
                 GameObject handle = new GameObject("Point " + i, typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(CollaborativeSplineHandle));
@@ -853,16 +1200,69 @@ namespace BallGame.LevelDesign
             }
         }
 
+        private void CreateTrackHandle(Vector3 position, Color color, int pointIndex, bool upper, bool entry)
+        {
+            GameObject handle = new GameObject(entry ? "Entry Handle" : "Point " + pointIndex,
+                typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(CollaborativeSplineHandle));
+            handle.transform.SetParent(splineHandleRoot, false);
+            handle.transform.position = position;
+            handle.transform.localScale = Vector3.one * (entry ? 0.36f : 0.28f);
+            SpriteRenderer renderer = handle.GetComponent<SpriteRenderer>();
+            renderer.sprite = GetHandleSprite();
+            renderer.color = color;
+            renderer.sortingOrder = 1000;
+            handle.GetComponent<CircleCollider2D>().radius = 0.6f;
+            CollaborativeSplineHandle marker = handle.GetComponent<CollaborativeSplineHandle>();
+            if (entry) marker.InitializeTrackEntry(selected, upper);
+            else marker.InitializeTrackPoint(selected, upper, pointIndex);
+        }
+
         private void UpdateSplineHandlePositions()
         {
-            if (selected == null || selected.Kind != CollaborativeObjectKind.SplineTool || splineHandleRoot == null) return;
+            if (selected == null || splineHandleRoot == null) return;
             CollaborativeSplineHandle[] handles = splineHandleRoot.GetComponentsInChildren<CollaborativeSplineHandle>(true);
             for (int i = 0; i < handles.Length; i++)
             {
                 CollaborativeSplineHandle handle = handles[i];
-                if (handle.Owner != selected || handle.PointIndex < 0 || handle.PointIndex >= selected.SplinePoints.Count) continue;
-                handle.transform.position = selected.transform.TransformPoint(selected.SplinePoints[handle.PointIndex].position);
+                if (handle.Owner != selected) continue;
+                if (handle.IsTrackIntersection)
+                {
+                    TrackIntersectionEditable2D track = selected.GetComponent<TrackIntersectionEditable2D>();
+                    if (track == null || selected.TrackIntersection == null) continue;
+                    if (handle.IsEntry)
+                        handle.transform.position = track.GetEntry(handle.Upper).position;
+                    else
+                    {
+                        CollaborativeTrackCurveData curve = handle.Upper
+                            ? selected.TrackIntersection.upperCurve
+                            : selected.TrackIntersection.lowerCurve;
+                        if (handle.PointIndex >= 0 && handle.PointIndex < curve.points.Count)
+                            handle.transform.position = track.GetSpline(handle.Upper).transform.TransformPoint(curve.points[handle.PointIndex].position);
+                    }
+                }
+                else if (handle.PointIndex >= 0 && handle.PointIndex < selected.SplinePoints.Count)
+                    handle.transform.position = selected.transform.TransformPoint(selected.SplinePoints[handle.PointIndex].position);
             }
+        }
+
+        private void RefreshTrackPartSelection()
+        {
+            RefreshSelection();
+            RebuildSplineHandles();
+        }
+
+        private bool TryGetActiveTrackPart(
+            out TrackIntersectionEditable2D editable,
+            out CollaborativeTrackIntersectionData data,
+            out bool upper,
+            out bool entry)
+        {
+            editable = selected != null ? selected.GetComponent<TrackIntersectionEditable2D>() : null;
+            data = selected != null ? selected.TrackIntersection : null;
+            int part = trackPartDropdown != null ? trackPartDropdown.value : 0;
+            upper = part == 0 || part == 2;
+            entry = part >= 2;
+            return editable != null && editable.IsConfigured && data != null;
         }
 
         private static Sprite GetHandleSprite()
@@ -889,11 +1289,15 @@ namespace BallGame.LevelDesign
 
         private void RefreshSelection()
         {
-            if (selectionText == null) return;
-            selectionText.text = selected == null
-                ? "No selection"
-                : selected.Id + "\n" + selected.AssetKey + "\nPosition: " + (Vector2)selected.transform.position + "\nRotation: " + selected.transform.localEulerAngles.z.ToString("0");
             bool hasSelection = selected != null;
+            bool trackSelected = hasSelection && selected.GetComponent<TrackIntersectionEditable2D>() != null && selected.TrackIntersection != null;
+            if (trackIntersectionInfo != null) trackIntersectionInfo.SetActive(trackSelected);
+            if (selectionText != null)
+            {
+                selectionText.text = selected == null
+                    ? "No selection"
+                    : selected.Id + "\n" + selected.AssetKey + "\nPosition: " + (Vector2)selected.transform.position + "\nRotation: " + selected.transform.localEulerAngles.z.ToString("0");
+            }
             SetInput(xInput, hasSelection ? selected.transform.position.x : 0f, hasSelection);
             SetInput(yInput, hasSelection ? selected.transform.position.y : 0f, hasSelection);
             SetInput(rotationInput, hasSelection ? selected.transform.localEulerAngles.z : 0f, hasSelection);
@@ -902,7 +1306,16 @@ namespace BallGame.LevelDesign
             SetInput(sizeXInput, sizeEditable ? editable.Size.x : 1f, sizeEditable);
             SetInput(sizeYInput, sizeEditable ? editable.Size.y : 1f, sizeEditable);
             bool splineSelected = hasSelection && selected.Kind == CollaborativeObjectKind.SplineTool;
-            SetInput(splineWidthInput, splineSelected ? selected.SplineWidth : 0.5f, splineSelected);
+            if (trackPartDropdown != null) trackPartDropdown.interactable = trackSelected;
+            bool trackCurveSelected = TryGetActiveTrackPart(out TrackIntersectionEditable2D track, out CollaborativeTrackIntersectionData trackData, out bool upper, out bool entry) && !entry;
+            CollaborativeTrackCurveData trackCurve = trackCurveSelected ? (upper ? trackData.upperCurve : trackData.lowerCurve) : null;
+            SetInput(splineWidthInput,
+                splineSelected ? selected.SplineWidth : trackCurveSelected ? trackCurve.width : 0.5f,
+                splineSelected || trackCurveSelected);
+            bool trackEntrySelected = trackSelected && !trackCurveSelected && track != null;
+            SetInput(trackEntryXInput, trackEntrySelected ? track.GetEntryLocalPosition(upper).x : 0f, trackEntrySelected);
+            SetInput(trackEntryYInput, trackEntrySelected ? track.GetEntryLocalPosition(upper).y : 0f, trackEntrySelected);
+            SetInput(trackEntryRotationInput, trackEntrySelected ? track.GetEntryLocalRotation(upper) : 0f, trackEntrySelected);
         }
 
         private void ApplyInspectorTransform()
@@ -916,8 +1329,18 @@ namespace BallGame.LevelDesign
             if (sizeEditable && (!TryRead(sizeXInput, out sizeX) || !TryRead(sizeYInput, out sizeY)
                 || sizeX <= 0f || sizeY <= 0f)) return;
             float splineWidth = 0.5f;
-            if (selected.Kind == CollaborativeObjectKind.SplineTool
-                && (!TryRead(splineWidthInput, out splineWidth) || splineWidth <= 0f)) return;
+            bool trackPart = TryGetActiveTrackPart(out TrackIntersectionEditable2D track, out CollaborativeTrackIntersectionData trackData, out bool upper, out bool entry);
+            bool widthEditable = selected.Kind == CollaborativeObjectKind.SplineTool || (trackPart && !entry);
+            if (widthEditable && (!TryRead(splineWidthInput, out splineWidth) || splineWidth <= 0f)) return;
+            Vector2 entryPosition = Vector2.zero;
+            float entryRotation = 0f;
+            if (trackPart && entry)
+            {
+                if (!TryRead(trackEntryXInput, out float entryX)
+                    || !TryRead(trackEntryYInput, out float entryY)
+                    || !TryRead(trackEntryRotationInput, out entryRotation)) return;
+                entryPosition = new Vector2(entryX, entryY);
+            }
             PushUndo();
             selected.transform.position = new Vector3(x, y, 0f);
             selected.transform.rotation = Quaternion.Euler(0f, 0f, rotation);
@@ -927,7 +1350,17 @@ namespace BallGame.LevelDesign
                 selected.SplineWidth = splineWidth;
                 ApplySpline(selected);
             }
+            else if (trackPart && !entry)
+            {
+                CollaborativeTrackCurveData curve = upper ? trackData.upperCurve : trackData.lowerCurve;
+                curve.width = splineWidth;
+                track.ApplyCurve(upper, curve);
+                track.ApplyEntries(trackData);
+            }
+            else if (trackPart)
+                track.SetEntryLocalPose(upper, entryPosition, entryRotation, trackData);
             RebuildSplineHandles();
+            RefreshSelection();
         }
 
         private void ToggleSplineClosed()
@@ -951,6 +1384,13 @@ namespace BallGame.LevelDesign
         private static void ApplySpline(CollaborativeLevelObject marker)
         {
             CollaborativeSplineUtility.Apply(marker.gameObject, marker.SplinePoints, marker.SplineWidth, marker.SplineClosed, marker.SplineCollisionMode);
+        }
+
+        private static void ApplyTrackIntersection(CollaborativeLevelObject marker)
+        {
+            if (marker == null || marker.TrackIntersection == null) return;
+            TrackIntersectionEditable2D editable = marker.GetComponent<TrackIntersectionEditable2D>();
+            if (editable != null) editable.Apply(marker.TrackIntersection);
         }
 
         private static void ApplyRecordSize(GameObject instance, CollaborativeObjectRecord record)
@@ -1000,6 +1440,105 @@ namespace BallGame.LevelDesign
             panel.transform.SetParent(parent, false);
             panel.GetComponent<Image>().color = color;
             return panel.GetComponent<RectTransform>();
+        }
+
+        private static void ConfigureBottomPaletteRect(RectTransform palette)
+        {
+            palette.anchorMin = new Vector2(0f, 0f);
+            palette.anchorMax = new Vector2(1f, 0f);
+            palette.pivot = new Vector2(0.5f, 0f);
+            palette.offsetMin = Vector2.zero;
+            palette.offsetMax = new Vector2(-InspectorWidth, PaletteHeight);
+        }
+
+        private static RectTransform CreatePaletteScrollView(Transform palette)
+        {
+            GameObject scrollObject = new GameObject("ToolScrollView", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(ScrollRect));
+            scrollObject.transform.SetParent(palette, false);
+            RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
+            scrollRectTransform.anchorMin = Vector2.zero;
+            scrollRectTransform.anchorMax = Vector2.one;
+            scrollRectTransform.pivot = new Vector2(0.5f, 0.5f);
+            scrollRectTransform.offsetMin = new Vector2(130f, 12f);
+            scrollRectTransform.offsetMax = new Vector2(-24f, -12f);
+            Image scrollImage = scrollObject.GetComponent<Image>();
+            scrollImage.color = new Color(0f, 0f, 0f, 0f);
+            scrollImage.raycastTarget = true;
+
+            GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(RectMask2D));
+            viewportObject.transform.SetParent(scrollObject.transform, false);
+            RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+            StretchToParent(viewport);
+            Image viewportImage = viewportObject.GetComponent<Image>();
+            viewportImage.color = new Color(1f, 1f, 1f, 0.001f);
+            viewportImage.raycastTarget = true;
+
+            GameObject contentObject = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+            contentObject.transform.SetParent(viewport, false);
+            RectTransform content = contentObject.GetComponent<RectTransform>();
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero;
+            GridLayoutGroup layout = contentObject.GetComponent<GridLayoutGroup>();
+            layout.cellSize = new Vector2(PaletteCellWidth, PaletteCellHeight);
+            layout.spacing = new Vector2(PaletteCellSpacing, PaletteCellSpacing);
+            layout.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            layout.startAxis = GridLayoutGroup.Axis.Horizontal;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            layout.constraintCount = 10;
+            ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            GameObject scrollbarObject = new GameObject("Scrollbar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Scrollbar));
+            scrollbarObject.transform.SetParent(palette, false);
+            RectTransform scrollbarRect = scrollbarObject.GetComponent<RectTransform>();
+            scrollbarRect.anchorMin = new Vector2(1f, 0f);
+            scrollbarRect.anchorMax = new Vector2(1f, 1f);
+            scrollbarRect.pivot = new Vector2(1f, 0.5f);
+            scrollbarRect.offsetMin = new Vector2(-20f, 12f);
+            scrollbarRect.offsetMax = new Vector2(-8f, -12f);
+            scrollbarObject.GetComponent<Image>().color = new Color(0.15f, 0.16f, 0.18f, 0.32f);
+
+            GameObject slidingAreaObject = new GameObject("Sliding Area", typeof(RectTransform));
+            slidingAreaObject.transform.SetParent(scrollbarObject.transform, false);
+            RectTransform slidingArea = slidingAreaObject.GetComponent<RectTransform>();
+            slidingArea.anchorMin = Vector2.zero;
+            slidingArea.anchorMax = Vector2.one;
+            slidingArea.offsetMin = new Vector2(2f, 2f);
+            slidingArea.offsetMax = new Vector2(-2f, -2f);
+
+            GameObject handleObject = new GameObject("Handle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            handleObject.transform.SetParent(slidingArea, false);
+            RectTransform handle = handleObject.GetComponent<RectTransform>();
+            handle.anchorMin = Vector2.zero;
+            handle.anchorMax = Vector2.one;
+            handle.offsetMin = Vector2.zero;
+            handle.offsetMax = Vector2.zero;
+            Image handleImage = handleObject.GetComponent<Image>();
+            handleImage.color = new Color(0.36f, 0.38f, 0.42f, 0.9f);
+
+            Scrollbar scrollbar = scrollbarObject.GetComponent<Scrollbar>();
+            scrollbar.handleRect = handle;
+            scrollbar.targetGraphic = handleImage;
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.value = 1f;
+
+            ScrollRect scrollRect = scrollObject.GetComponent<ScrollRect>();
+            scrollRect.content = content;
+            scrollRect.viewport = viewport;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Elastic;
+            scrollRect.inertia = true;
+            scrollRect.scrollSensitivity = 35f;
+            scrollRect.verticalScrollbar = scrollbar;
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+            scrollRect.verticalNormalizedPosition = 1f;
+            return content;
         }
 
         private static Button AddButton(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction action)

@@ -14,10 +14,11 @@ namespace BallGame.Editor
     public static class CollaborativeLevelImporter
     {
         private const string RegistryPath = "Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset";
-        private const string TemplateScenePath = "Assets/Scenes/NormalLevels/Level_01.unity";
+        private const string TemplateScenePath = "Assets/Scenes/NormalLevels/Level_Template.unity";
         private const string SceneDirectory = "Assets/Scenes/NormalLevels";
         private const string DefinitionDirectory = "Assets/LevelDefinitions";
         private const string CatalogPath = "Assets/LevelDefinitions/LevelCatalog.asset";
+        private const string SharedToolCatalogPath = "Assets/Tools/ToolCatalog.asset";
 
         [MenuItem("Ball Game/Level Design/Import Collaborative JSON...")]
         public static void ImportFromFile()
@@ -55,6 +56,21 @@ namespace BallGame.Editor
                 return false;
             }
 
+            ToolCatalog sharedToolCatalog = null;
+            if (document.mode == "LowestCost")
+            {
+                sharedToolCatalog = AssetDatabase.LoadAssetAtPath<ToolCatalog>(SharedToolCatalogPath);
+                if (sharedToolCatalog == null)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Level Import Failed",
+                        "LowestCost requires the shared ToolCatalog at " + SharedToolCatalogPath
+                            + ". Run Ball Game > Lowest Cost > Refresh Shared Tool Catalog, then import again.",
+                        "OK");
+                    return false;
+                }
+            }
+
             int levelNumber = GetNextLevelNumber();
             string slug = SanitizeName(string.IsNullOrWhiteSpace(suggestedName) ? document.title : suggestedName);
             string scenePath = SceneDirectory + "/Level_" + levelNumber.ToString("00") + "_" + slug + ".unity";
@@ -68,18 +84,22 @@ namespace BallGame.Editor
             if (!EditorUtility.DisplayDialog("Import Collaborative Level", "Create:\n" + scenePath + "\n" + definitionPath, "Create", "Cancel"))
                 return false;
 
-            return GenerateScene(document, registry, levelNumber, scenePath, definitionPath);
+            return GenerateScene(document, registry, sharedToolCatalog, levelNumber, scenePath, definitionPath);
         }
 
-        private static bool GenerateScene(CollaborativeLevelDocument document, CollaborativeLevelAssetRegistry registry, int levelNumber, string scenePath, string definitionPath)
+        private static bool GenerateScene(CollaborativeLevelDocument document, CollaborativeLevelAssetRegistry registry, ToolCatalog sharedToolCatalog, int levelNumber, string scenePath, string definitionPath)
         {
             EnsureFolder(SceneDirectory);
             EnsureFolder(DefinitionDirectory);
-            if (!AssetDatabase.CopyAsset(TemplateScenePath, scenePath))
-                throw new InvalidOperationException("Could not copy the level template to " + scenePath);
+            string templateScenePath = GetTemplateScenePath(document);
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(templateScenePath) == null)
+                throw new InvalidOperationException("Level template was not found: " + templateScenePath);
+            if (!AssetDatabase.CopyAsset(templateScenePath, scenePath))
+                throw new InvalidOperationException("Could not copy the level template " + templateScenePath + " to " + scenePath);
             AssetDatabase.ImportAsset(scenePath, ImportAssetOptions.ForceSynchronousImport);
             Scene generated = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
 
+            RemoveTemplateBallAndGoal(generated, registry);
             Transform placedTools = FindOrCreateRoot("Placed Tools");
             Transform mapObstacles = FindOrCreateRoot("Map Obstacles");
             ClearChildren(placedTools);
@@ -99,6 +119,12 @@ namespace BallGame.Editor
                     editable.SetSize(record.size);
                 if (record.kind == CollaborativeObjectKind.SplineTool)
                     CollaborativeSplineUtility.Apply(instance, record.splinePoints, record.splineWidth, record.splineClosed, record.splineCollisionMode);
+                TrackIntersectionEditable2D trackIntersection = instance.GetComponent<TrackIntersectionEditable2D>();
+                if (trackIntersection != null)
+                {
+                    CollaborativeTrackIntersectionData data = record.trackIntersection ?? trackIntersection.CaptureData();
+                    trackIntersection.Apply(data);
+                }
                 if (record.assetKey == "portal") ApplyPortalPair(instance, record);
             }
 
@@ -106,24 +132,7 @@ namespace BallGame.Editor
 
             LevelDefinition definition = ScriptableObject.CreateInstance<LevelDefinition>();
             AssetDatabase.CreateAsset(definition, definitionPath);
-            SerializedObject definitionSerialized = new SerializedObject(definition);
-            definitionSerialized.FindProperty("levelTitle").stringValue = document.title;
-            definitionSerialized.FindProperty("mode").enumValueIndex = (int)LevelMode.Normal;
-            SerializedProperty tools = definitionSerialized.FindProperty("tools");
-            tools.arraySize = 0;
-            if (document.toolStock != null)
-            {
-                foreach (CollaborativeToolStock stock in document.toolStock)
-                {
-                    CollaborativeLevelAssetEntry entry = registry.Find(stock.assetKey);
-                    if (entry == null || entry.toolDefinition == null) continue;
-                    int index = tools.arraySize++;
-                    SerializedProperty item = tools.GetArrayElementAtIndex(index);
-                    item.FindPropertyRelative("tool").objectReferenceValue = entry.toolDefinition;
-                    item.FindPropertyRelative("count").intValue = Mathf.Max(0, stock.count);
-                }
-            }
-            definitionSerialized.ApplyModifiedPropertiesWithoutUndo();
+            ConfigureLevelDefinition(definition, document, registry, sharedToolCatalog);
             EditorUtility.SetDirty(definition);
 
             AssignLevelDefinition(generated, definition);
@@ -134,6 +143,63 @@ namespace BallGame.Editor
             AssetDatabase.Refresh();
             EditorUtility.DisplayDialog("Level Imported", "Created " + scenePath, "OK");
             return true;
+        }
+
+        private static string GetTemplateScenePath(CollaborativeLevelDocument document)
+        {
+            return TemplateScenePath;
+        }
+
+        private static void ConfigureLevelDefinition(LevelDefinition definition, CollaborativeLevelDocument document, CollaborativeLevelAssetRegistry registry, ToolCatalog sharedToolCatalog)
+        {
+            bool lowestCost = document.mode == "LowestCost";
+            SerializedObject definitionSerialized = new SerializedObject(definition);
+            definitionSerialized.FindProperty("levelTitle").stringValue = document.title;
+            definitionSerialized.FindProperty("mode").enumValueIndex = lowestCost ? (int)LevelMode.LowestCost : (int)LevelMode.Normal;
+            definitionSerialized.FindProperty("toolCatalog").objectReferenceValue = lowestCost ? sharedToolCatalog : null;
+            SerializedProperty tools = definitionSerialized.FindProperty("tools");
+            tools.arraySize = 0;
+            if (!lowestCost && document.toolStock != null)
+            {
+                foreach (CollaborativeToolStock stock in document.toolStock)
+                {
+                    if (stock == null || stock.count <= 0) continue;
+                    CollaborativeLevelAssetEntry entry = registry.Find(stock.assetKey);
+                    if (entry == null || entry.toolDefinition == null) continue;
+                    int index = tools.arraySize++;
+                    SerializedProperty item = tools.GetArrayElementAtIndex(index);
+                    item.FindPropertyRelative("tool").objectReferenceValue = entry.toolDefinition;
+                    item.FindPropertyRelative("count").intValue = stock.count;
+                }
+            }
+            definitionSerialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void RemoveTemplateBallAndGoal(Scene scene, CollaborativeLevelAssetRegistry registry)
+        {
+            HashSet<GameObject> sourcePrefabs = new HashSet<GameObject>();
+            foreach (CollaborativeLevelAssetEntry entry in registry.Entries)
+            {
+                if (entry == null || entry.prefab == null) continue;
+                if (entry.kind == CollaborativeObjectKind.Ball || entry.kind == CollaborativeObjectKind.Goal)
+                    sourcePrefabs.Add(entry.prefab);
+            }
+
+            HashSet<GameObject> instances = new HashSet<GameObject>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+                for (int i = 0; i < transforms.Length; i++)
+                {
+                    GameObject instanceRoot = PrefabUtility.GetNearestPrefabInstanceRoot(transforms[i].gameObject);
+                    if (instanceRoot == null) continue;
+                    GameObject source = PrefabUtility.GetCorrespondingObjectFromOriginalSource(instanceRoot);
+                    if (sourcePrefabs.Contains(source)) instances.Add(instanceRoot);
+                }
+            }
+
+            foreach (GameObject instance in instances)
+                UnityEngine.Object.DestroyImmediate(instance);
         }
 
         private static void AssignLevelDefinition(Scene scene, LevelDefinition definition)

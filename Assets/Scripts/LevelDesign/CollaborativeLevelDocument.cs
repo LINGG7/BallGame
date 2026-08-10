@@ -16,7 +16,7 @@ namespace BallGame.LevelDesign
     [Serializable]
     public sealed class CollaborativeLevelDocument
     {
-        public int formatVersion = 3;
+        public int formatVersion = 4;
         public string title = "New Level";
         public string author = string.Empty;
         public string mode = "Normal";
@@ -38,7 +38,25 @@ namespace BallGame.LevelDesign
             CollaborativeLevelDocument document = JsonUtility.FromJson<CollaborativeLevelDocument>(json);
             if (document == null)
                 throw new InvalidOperationException("Level JSON could not be parsed.");
+            if (string.IsNullOrWhiteSpace(document.mode)) document.mode = "Normal";
+            if (document.toolStock == null) document.toolStock = new List<CollaborativeToolStock>();
+            if (document.objects == null) document.objects = new List<CollaborativeObjectRecord>();
+            foreach (CollaborativeObjectRecord item in document.objects)
+            {
+                if (item == null) continue;
+                if (item.assetKey != "track_intersection")
+                    item.trackIntersection = null;
+                else if (document.formatVersion < 4 && IsEmptyTrackIntersection(item.trackIntersection))
+                    item.trackIntersection = null;
+            }
             return document;
+        }
+
+        private static bool IsEmptyTrackIntersection(CollaborativeTrackIntersectionData data)
+        {
+            return data == null
+                || ((data.upperCurve == null || data.upperCurve.points == null || data.upperCurve.points.Count == 0)
+                    && (data.lowerCurve == null || data.lowerCurve.points == null || data.lowerCurve.points.Count == 0));
         }
     }
 
@@ -65,6 +83,7 @@ namespace BallGame.LevelDesign
         public string splineCollisionMode = "SolidPolygon";
         public List<CollaborativeProperty> properties = new List<CollaborativeProperty>();
         public List<CollaborativeSplinePoint> splinePoints = new List<CollaborativeSplinePoint>();
+        public CollaborativeTrackIntersectionData trackIntersection;
     }
 
     [Serializable]
@@ -82,6 +101,75 @@ namespace BallGame.LevelDesign
         public Vector2 tangentOut;
     }
 
+    [Serializable]
+    public sealed class CollaborativeTrackCurveData
+    {
+        public float width = 0.5f;
+        public List<CollaborativeSplinePoint> points = new List<CollaborativeSplinePoint>();
+    }
+
+    [Serializable]
+    public sealed class CollaborativeEndpointAttachmentData
+    {
+        public bool attachToStart;
+        public Vector2 positionOffset;
+        public float rotationOffset;
+    }
+
+    [Serializable]
+    public sealed class CollaborativeTrackIntersectionData
+    {
+        public CollaborativeTrackCurveData upperCurve = new CollaborativeTrackCurveData();
+        public CollaborativeTrackCurveData lowerCurve = new CollaborativeTrackCurveData();
+        public CollaborativeEndpointAttachmentData upperEntryA = new CollaborativeEndpointAttachmentData();
+        public CollaborativeEndpointAttachmentData lowerEntryA = new CollaborativeEndpointAttachmentData();
+
+        public CollaborativeTrackIntersectionData Clone()
+        {
+            return new CollaborativeTrackIntersectionData
+            {
+                upperCurve = CloneCurve(upperCurve),
+                lowerCurve = CloneCurve(lowerCurve),
+                upperEntryA = CloneAttachment(upperEntryA),
+                lowerEntryA = CloneAttachment(lowerEntryA)
+            };
+        }
+
+        private static CollaborativeTrackCurveData CloneCurve(CollaborativeTrackCurveData source)
+        {
+            CollaborativeTrackCurveData clone = new CollaborativeTrackCurveData
+            {
+                width = source != null ? source.width : 0.5f
+            };
+            if (source != null && source.points != null)
+            {
+                foreach (CollaborativeSplinePoint point in source.points)
+                {
+                    if (point == null) continue;
+                    clone.points.Add(new CollaborativeSplinePoint
+                    {
+                        position = point.position,
+                        tangentIn = point.tangentIn,
+                        tangentOut = point.tangentOut
+                    });
+                }
+            }
+            return clone;
+        }
+
+        private static CollaborativeEndpointAttachmentData CloneAttachment(CollaborativeEndpointAttachmentData source)
+        {
+            return source == null
+                ? new CollaborativeEndpointAttachmentData()
+                : new CollaborativeEndpointAttachmentData
+                {
+                    attachToStart = source.attachToStart,
+                    positionOffset = source.positionOffset,
+                    rotationOffset = source.rotationOffset
+                };
+        }
+    }
+
     public static class CollaborativeLevelValidator
     {
         public static List<string> Validate(CollaborativeLevelDocument document, CollaborativeLevelAssetRegistry registry)
@@ -93,10 +181,12 @@ namespace BallGame.LevelDesign
                 return errors;
             }
 
-            if (document.formatVersion != 1 && document.formatVersion != 2 && document.formatVersion != 3)
+            if (document.formatVersion < 1 || document.formatVersion > 4)
                 errors.Add("Unsupported formatVersion: " + document.formatVersion);
             if (string.IsNullOrWhiteSpace(document.title))
                 errors.Add("title is required.");
+            if (document.mode != "Normal" && document.mode != "LowestCost")
+                errors.Add("mode must be Normal or LowestCost.");
             if (!IsFinitePositive(document.canvasWidth) || !IsFinitePositive(document.canvasHeight))
                 errors.Add("canvasWidth and canvasHeight must be finite positive values.");
             if (!IsFinite(document.canvasCenter.x) || !IsFinite(document.canvasCenter.y))
@@ -180,6 +270,7 @@ namespace BallGame.LevelDesign
                     else if (!int.TryParse(pairId, out _)) errors.Add("Portal pairId must be an integer: " + item.id);
                     else portalPairs[pairId] = portalPairs.TryGetValue(pairId, out int count) ? count + 1 : 1;
                 }
+                ValidateTrackIntersection(document.formatVersion, item, errors);
             }
 
             if (ballCount == 0) errors.Add("At least one Ball object is required.");
@@ -187,6 +278,55 @@ namespace BallGame.LevelDesign
             foreach (KeyValuePair<string, int> pair in portalPairs)
                 if (pair.Value != 2) errors.Add("Portal pair " + pair.Key + " must contain exactly two portals.");
             return errors;
+        }
+
+        private static void ValidateTrackIntersection(int formatVersion, CollaborativeObjectRecord item, List<string> errors)
+        {
+            bool isTrackIntersection = item.assetKey == "track_intersection";
+            if (!isTrackIntersection) return;
+
+            if (item.trackIntersection == null
+                || ((item.trackIntersection.upperCurve == null
+                        || item.trackIntersection.upperCurve.points == null
+                        || item.trackIntersection.upperCurve.points.Count == 0)
+                    && (item.trackIntersection.lowerCurve == null
+                        || item.trackIntersection.lowerCurve.points == null
+                        || item.trackIntersection.lowerCurve.points.Count == 0)))
+            {
+                if (formatVersion >= 4)
+                    errors.Add("track_intersection is missing compound edit data: " + item.id);
+                return;
+            }
+
+            ValidateTrackCurve(item.trackIntersection.upperCurve, "upperCurve", item.id, errors);
+            ValidateTrackCurve(item.trackIntersection.lowerCurve, "lowerCurve", item.id, errors);
+            ValidateAttachment(item.trackIntersection.upperEntryA, "upperEntryA", item.id, errors);
+            ValidateAttachment(item.trackIntersection.lowerEntryA, "lowerEntryA", item.id, errors);
+        }
+
+        private static void ValidateTrackCurve(CollaborativeTrackCurveData curve, string name, string id, List<string> errors)
+        {
+            if (curve == null || curve.points == null || curve.points.Count < 2)
+            {
+                errors.Add("Track intersection " + name + " needs at least two points: " + id);
+                return;
+            }
+            if (!IsFinitePositive(curve.width))
+                errors.Add("Track intersection " + name + " width must be finite and positive: " + id);
+            foreach (CollaborativeSplinePoint point in curve.points)
+            {
+                if (point == null || !IsFinite(point.position.x) || !IsFinite(point.position.y))
+                    errors.Add("Track intersection " + name + " contains an invalid point: " + id);
+            }
+        }
+
+        private static void ValidateAttachment(CollaborativeEndpointAttachmentData attachment, string name, string id, List<string> errors)
+        {
+            if (attachment == null
+                || !IsFinite(attachment.positionOffset.x)
+                || !IsFinite(attachment.positionOffset.y)
+                || !IsFinite(attachment.rotationOffset))
+                errors.Add("Track intersection " + name + " contains an invalid offset: " + id);
         }
 
         private static string FindProperty(CollaborativeObjectRecord item, string key)

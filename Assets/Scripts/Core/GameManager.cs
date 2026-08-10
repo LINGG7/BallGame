@@ -71,14 +71,11 @@ namespace BallGame.Core
                 hudRefs = FindObjectOfType<GameHudRefs>();
             }
 
+            ResolveHudReferences();
+
             if (hudRefs != null && hudRefs.PlacementControls != null)
             {
                 hudRefs.PlacementControls.BindPlacementManager(placementManager);
-            }
-
-            if (returnButton == null && hudRefs != null)
-            {
-                returnButton = hudRefs.ReturnButton;
             }
 
             if (placementManager != null)
@@ -87,6 +84,23 @@ namespace BallGame.Core
             }
 
             RefreshActiveGoals();
+        }
+
+        private void ResolveHudReferences()
+        {
+            if (hudRefs == null)
+            {
+                return;
+            }
+
+            if (inventoryPanel == null) inventoryPanel = hudRefs.InventoryPanel;
+            if (titleText == null) titleText = hudRefs.TitleText;
+            if (statusText == null) statusText = hudRefs.StatusText;
+            if (runButton == null) runButton = hudRefs.RunButton;
+            if (resetButton == null) resetButton = hudRefs.ResetButton;
+            if (editButton == null) editButton = hudRefs.EditButton;
+            if (nextButton == null) nextButton = hudRefs.NextButton;
+            if (returnButton == null) returnButton = hudRefs.ReturnButton;
         }
 
         private void OnDestroy()

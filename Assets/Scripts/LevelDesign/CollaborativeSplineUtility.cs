@@ -32,11 +32,35 @@ namespace BallGame.LevelDesign
     {
         public CollaborativeLevelObject Owner { get; private set; }
         public int PointIndex { get; private set; }
+        public bool IsTrackIntersection { get; private set; }
+        public bool IsEntry { get; private set; }
+        public bool Upper { get; private set; }
 
         public void Initialize(CollaborativeLevelObject owner, int pointIndex)
         {
             Owner = owner;
             PointIndex = pointIndex;
+            IsTrackIntersection = false;
+            IsEntry = false;
+            Upper = false;
+        }
+
+        public void InitializeTrackPoint(CollaborativeLevelObject owner, bool upper, int pointIndex)
+        {
+            Owner = owner;
+            PointIndex = pointIndex;
+            IsTrackIntersection = true;
+            IsEntry = false;
+            Upper = upper;
+        }
+
+        public void InitializeTrackEntry(CollaborativeLevelObject owner, bool upper)
+        {
+            Owner = owner;
+            PointIndex = -1;
+            IsTrackIntersection = true;
+            IsEntry = true;
+            Upper = upper;
         }
     }
 }

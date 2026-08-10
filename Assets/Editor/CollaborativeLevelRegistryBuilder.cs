@@ -36,6 +36,7 @@ namespace BallGame.Editor
             Add(entries, "anti_gravity", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/AntiGravity.prefab", "Assets/Resources/Art/ItemIcon/Antigravity_Icon.png", "Assets/Tools/AntiGravity.asset");
             Add(entries, "obstacle", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/Obstacle.prefab", null, null);
             Add(entries, "curve_obstacle", CollaborativeObjectKind.SplineTool, "Assets/Resources/Prefabs/CurveObstacle.prefab", null, null);
+            Add(entries, "track_intersection", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/TrackIntersection.prefab", null, null);
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(registry);

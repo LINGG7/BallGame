@@ -14,6 +14,8 @@ namespace BallGame.LevelDesign
         public Sprite icon;
         public ToolDefinition toolDefinition;
         public bool supportsSpline;
+
+        public bool IsInventoryTool => kind == CollaborativeObjectKind.Tool && toolDefinition != null;
     }
 
     [CreateAssetMenu(menuName = "Ball Game/Level Design/Asset Registry", fileName = "CollaborativeLevelAssetRegistry")]
