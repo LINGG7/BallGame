@@ -157,8 +157,13 @@ namespace BallGame.Tests.Editor
                 controllerType.GetField("registry", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, registry);
                 controllerType.GetField("worldRoot", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, world.transform);
                 MethodInfo findObject = controllerType.GetMethod("FindObjectAt", BindingFlags.NonPublic | BindingFlags.Instance);
+                MethodInfo isObjectAt = controllerType.GetMethod("IsObjectAt", BindingFlags.NonPublic | BindingFlags.Static);
                 FieldInfo clickOrder = toolType.GetField("clickSortingOrder", BindingFlags.NonPublic | BindingFlags.Instance);
                 Collider2D[] hits = { tool.GetComponent<BoxCollider2D>(), withoutDefinition.GetComponent<BoxCollider2D>() };
+
+                Assert.That((bool)isObjectAt.Invoke(null, new object[] { withoutDefinitionMarker, Vector2.zero, hits }), Is.True,
+                    "A selected object under the pointer must remain eligible for direct dragging even when objects overlap.");
+                Assert.That((bool)isObjectAt.Invoke(null, new object[] { withoutDefinitionMarker, new Vector2(5f, 5f), Array.Empty<Collider2D>() }), Is.False);
 
                 clickOrder.SetValue(toolDefinition, 4);
                 Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, hits }), Is.EqualTo(withoutDefinitionMarker),
@@ -234,6 +239,27 @@ namespace BallGame.Tests.Editor
             Assert.That(paletteScroll.horizontal, Is.False);
             Assert.That(paletteScroll.vertical, Is.True);
             Assert.That(paletteScroll.verticalScrollbar, Is.EqualTo(scrollbarObject.GetComponent<Scrollbar>()));
+            Transform placedHierarchy = FindChild(prefab.transform, "PlacedHierarchy");
+            Assert.That(placedHierarchy, Is.Not.Null);
+            RectTransform hierarchyRect = placedHierarchy as RectTransform;
+            Assert.That(hierarchyRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
+            Assert.That(hierarchyRect.anchorMax, Is.EqualTo(new Vector2(0f, 1f)));
+            Assert.That(hierarchyRect.offsetMax.x, Is.EqualTo(270f).Within(0.01f));
+            Transform hierarchyScrollObject = FindChild(placedHierarchy, "PlacedHierarchyScrollView");
+            Transform hierarchyContent = FindChild(placedHierarchy, "PlacedHierarchyContent");
+            Transform hierarchyTemplate = FindChild(placedHierarchy, "HierarchyItemTemplate");
+            Assert.That(hierarchyScrollObject, Is.Not.Null);
+            Assert.That(hierarchyContent, Is.Not.Null);
+            Assert.That(hierarchyContent.GetComponent<VerticalLayoutGroup>(), Is.Not.Null);
+            Assert.That(hierarchyContent.GetComponent<ContentSizeFitter>(), Is.Not.Null);
+            Assert.That(hierarchyTemplate, Is.Not.Null);
+            Assert.That(hierarchyTemplate.GetComponent<Button>(), Is.Not.Null);
+            Assert.That(hierarchyTemplate.gameObject.activeSelf, Is.False);
+            ScrollRect hierarchyScroll = hierarchyScrollObject.GetComponent<ScrollRect>();
+            Assert.That(hierarchyScroll, Is.Not.Null);
+            Assert.That(hierarchyScroll.content, Is.EqualTo(hierarchyContent));
+            Assert.That(hierarchyScroll.horizontal, Is.False);
+            Assert.That(hierarchyScroll.vertical, Is.True);
             SerializedProperty paletteEntries = new SerializedObject(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath)).FindProperty("entries");
             for (int i = 0; i < paletteEntries.arraySize; i++)
             {

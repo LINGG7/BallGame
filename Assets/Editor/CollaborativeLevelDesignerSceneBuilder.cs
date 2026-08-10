@@ -57,6 +57,7 @@ namespace BallGame.Editor
                 EnsureLevelSettingsUi();
                 EnsureTrackIntersectionUi();
                 EnsurePaletteScrollView();
+                EnsurePlacedHierarchyUi();
                 if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null)
                     CreateScene();
                 EnsureDesignerUiInstance();
@@ -514,6 +515,41 @@ namespace BallGame.Editor
             palette.pivot = new Vector2(0.5f, 0f);
             palette.offsetMin = Vector2.zero;
             palette.offsetMax = new Vector2(-350f, 120f);
+        }
+
+        [MenuItem("Ball Game/Level Design/Upgrade Designer UI Placed Hierarchy")]
+        private static void EnsurePlacedHierarchyUi()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(UiPrefabPath);
+            if (prefab == null) return;
+            Transform currentPanel = FindChild(prefab.transform, "PlacedHierarchy");
+            if (currentPanel != null
+                && FindChild(currentPanel, "PlacedHierarchyScrollView")?.GetComponent<ScrollRect>() != null
+                && FindChild(currentPanel, "PlacedHierarchyContent")?.GetComponent<VerticalLayoutGroup>() != null
+                && FindChild(currentPanel, "HierarchyItemTemplate")?.GetComponent<Button>() != null)
+                return;
+            if (currentPanel != null)
+            {
+                Debug.LogError("DesignerUI PlacedHierarchy is incomplete. Repair its missing children instead of creating a duplicate panel.");
+                return;
+            }
+
+            GameObject root = PrefabUtility.LoadPrefabContents(UiPrefabPath);
+            try
+            {
+                RectTransform palette = FindChild(root.transform, "Palette") as RectTransform;
+                MethodInfo createHierarchy = typeof(CollaborativeLevelDesignerController).GetMethod(
+                    "CreatePlacedHierarchyUi", BindingFlags.NonPublic | BindingFlags.Static);
+                if (createHierarchy == null)
+                    throw new System.InvalidOperationException("Placed Hierarchy UI creation helper was not found.");
+                object[] arguments = { root.transform, palette, null, null, null };
+                createHierarchy.Invoke(null, arguments);
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         private static void StretchRect(RectTransform rect)

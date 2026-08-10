@@ -25,12 +25,16 @@ namespace BallGame.LevelDesign
         private const float PaletteCellWidth = 230f;
         private const float PaletteCellHeight = 48f;
         private const float PaletteCellSpacing = 10f;
+        private const float PlacedHierarchyWidth = 270f;
+        private const float TopBarHeight = 68f;
         private readonly Stack<string> undo = new Stack<string>();
         private readonly Stack<string> redo = new Stack<string>();
         private readonly List<SpriteRenderer> selectedRenderers = new List<SpriteRenderer>();
         private readonly List<Color> selectedRendererColors = new List<Color>();
         private readonly List<LineRenderer> originMarkerLines = new List<LineRenderer>();
         private readonly Dictionary<string, TMP_InputField> levelStockInputs = new Dictionary<string, TMP_InputField>(StringComparer.Ordinal);
+        private readonly Dictionary<CollaborativeLevelObject, Button> hierarchyRows = new Dictionary<CollaborativeLevelObject, Button>();
+        private readonly Dictionary<Button, ColorBlock> hierarchyRowColors = new Dictionary<Button, ColorBlock>();
         private CollaborativeLevelAssetRegistry registry;
         private CollaborativeLevelDocument document = new CollaborativeLevelDocument();
         private Camera worldCamera;
@@ -55,6 +59,9 @@ namespace BallGame.LevelDesign
         private TMP_InputField trackEntryXInput;
         private TMP_InputField trackEntryYInput;
         private TMP_InputField trackEntryRotationInput;
+        private RectTransform hierarchyContent;
+        private Button hierarchyItemTemplate;
+        private ScrollRect hierarchyScrollRect;
         private GameObject levelSettingsPanel;
         private TMP_Dropdown levelModeDropdown;
         private TMP_Text levelSettingsHint;
@@ -271,6 +278,9 @@ namespace BallGame.LevelDesign
                 }
             }
 
+            CreatePlacedHierarchyUi(canvas.transform, palette, out hierarchyContent, out hierarchyItemTemplate, out hierarchyScrollRect);
+            RebuildHierarchy();
+
             RectTransform inspector = CreatePanel(canvas.transform, "Inspector", new Color(0.96f, 0.95f, 0.90f, 0.97f));
             Anchor(inspector, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(300f, -68f), new Vector2(0f, -34f));
             selectionText = AddText(inspector, "Selection", new Vector2(150f, -55f), new Vector2(260f, 90f), 22f, TextAlignmentOptions.TopLeft);
@@ -325,6 +335,18 @@ namespace BallGame.LevelDesign
             }
             if (root == null) return false;
 
+            RectTransform paletteRect = FindComponent<RectTransform>(root, "Palette");
+            RectTransform hierarchyPanel = FindComponent<RectTransform>(root, "PlacedHierarchy");
+            if (hierarchyPanel == null)
+                CreatePlacedHierarchyUi(root, paletteRect, out hierarchyContent, out hierarchyItemTemplate, out hierarchyScrollRect);
+            else
+            {
+                ConfigurePlacedHierarchyRect(hierarchyPanel, paletteRect);
+                hierarchyContent = FindComponent<RectTransform>(hierarchyPanel, "PlacedHierarchyContent");
+                hierarchyItemTemplate = FindComponent<Button>(hierarchyPanel, "HierarchyItemTemplate");
+                hierarchyScrollRect = FindComponent<ScrollRect>(hierarchyPanel, "PlacedHierarchyScrollView");
+            }
+
             statusText = FindComponent<TMP_Text>(root, "Status");
             ConfigureStatusRect(statusText);
             selectionText = FindComponent<TMP_Text>(root, "Selection");
@@ -374,6 +396,7 @@ namespace BallGame.LevelDesign
             titleInput.SetTextWithoutNotify(document.title);
             authorInput.SetTextWithoutNotify(document.author);
             RefreshSelection();
+            RebuildHierarchy();
             BuildLevelSettingsPanel(root);
             return true;
         }
@@ -647,6 +670,7 @@ namespace BallGame.LevelDesign
             }
             SetPhysics(instance, false);
             Select(marker);
+            RebuildHierarchy();
         }
 
         private string GetNextPortalPairId()
@@ -685,7 +709,9 @@ namespace BallGame.LevelDesign
                     dragging = true;
                     return;
                 }
-                CollaborativeLevelObject marker = FindObjectAt(world, hits);
+                CollaborativeLevelObject marker = selected != null && IsObjectAt(selected, world, hits)
+                    ? selected
+                    : FindObjectAt(world, hits);
                 Select(marker);
                 if (marker != null)
                 {
@@ -819,6 +845,21 @@ namespace BallGame.LevelDesign
             return best;
         }
 
+        private static bool IsObjectAt(CollaborativeLevelObject candidate, Vector2 world, Collider2D[] hits)
+        {
+            if (candidate == null) return false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i] == null) continue;
+                if (hits[i].GetComponentInParent<CollaborativeLevelObject>() == candidate) return true;
+            }
+
+            SpriteRenderer[] renderers = candidate.GetComponentsInChildren<SpriteRenderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+                if (renderers[i].bounds.Contains(world)) return true;
+            return false;
+        }
+
         private void ConsiderCandidate(
             CollaborativeLevelObject candidate,
             ref CollaborativeLevelObject best,
@@ -883,6 +924,7 @@ namespace BallGame.LevelDesign
             if (selected == null || simulating) return;
             PushUndo();
             GameObject target = selected.gameObject;
+            RemoveHierarchyItem(selected);
             Select(null);
             Destroy(target);
         }
@@ -908,6 +950,7 @@ namespace BallGame.LevelDesign
             if (marker.Kind == CollaborativeObjectKind.SplineTool) ApplySpline(marker);
             ApplyTrackIntersection(marker);
             Select(marker);
+            RebuildHierarchy();
         }
 
         private void RotateSelected(float degrees)
@@ -929,6 +972,7 @@ namespace BallGame.LevelDesign
                 foreach (BallController ball in worldRoot.GetComponentsInChildren<BallController>(true)) ball.Launch();
                 ApplyAllPortalPairs();
                 SetSimulationPreview(true);
+                SetHierarchyInteractable(false);
                 SetStatus("Simulation running. Click Test again to restore edit state.");
             }
             else
@@ -1031,11 +1075,13 @@ namespace BallGame.LevelDesign
         private void LoadDocument(CollaborativeLevelDocument source)
         {
             CloseLevelSettings();
+            ClearHierarchyItems();
             for (int i = worldRoot.childCount - 1; i >= 0; i--) Destroy(worldRoot.GetChild(i).gameObject);
             document = source;
             if (titleInput != null) titleInput.SetTextWithoutNotify(document.title);
             if (authorInput != null) authorInput.SetTextWithoutNotify(document.author);
             nextObjectId = 1;
+            List<CollaborativeLevelObject> loadedObjects = new List<CollaborativeLevelObject>();
             foreach (CollaborativeObjectRecord record in document.objects)
             {
                 CollaborativeLevelAssetEntry entry = registry != null ? registry.Find(record.assetKey) : null;
@@ -1052,9 +1098,11 @@ namespace BallGame.LevelDesign
                     ApplySpline(marker);
                 ApplyTrackIntersection(marker);
                 SetPhysics(instance, false);
+                loadedObjects.Add(marker);
                 nextObjectId++;
             }
             Select(null);
+            RebuildHierarchy(loadedObjects);
         }
 
         private void PushUndo()
@@ -1095,6 +1143,7 @@ namespace BallGame.LevelDesign
             ApplySelectionOpacity();
             RefreshSelection();
             RebuildSplineHandles();
+            RefreshHierarchySelection();
         }
 
         private void ApplySelectionOpacity()
@@ -1434,12 +1483,216 @@ namespace BallGame.LevelDesign
             if (statusText != null) statusText.text = value;
         }
 
+        private void RebuildHierarchy()
+        {
+            CollaborativeLevelObject[] objects = worldRoot != null
+                ? worldRoot.GetComponentsInChildren<CollaborativeLevelObject>(true)
+                : Array.Empty<CollaborativeLevelObject>();
+            Array.Sort(objects, (left, right) => left.transform.GetSiblingIndex().CompareTo(right.transform.GetSiblingIndex()));
+            RebuildHierarchy(objects);
+        }
+
+        private void RebuildHierarchy(IList<CollaborativeLevelObject> objects)
+        {
+            if (hierarchyContent == null || hierarchyItemTemplate == null) return;
+            float scrollPosition = hierarchyScrollRect != null ? hierarchyScrollRect.verticalNormalizedPosition : 1f;
+            ClearHierarchyItems();
+            for (int i = 0; i < objects.Count; i++)
+            {
+                CollaborativeLevelObject marker = objects[i];
+                if (marker == null) continue;
+                Button row = Instantiate(hierarchyItemTemplate, hierarchyContent, false);
+                row.name = "HierarchyItem_" + marker.Id;
+                row.gameObject.SetActive(true);
+                row.onClick.RemoveAllListeners();
+                CollaborativeLevelObject captured = marker;
+                row.onClick.AddListener(() =>
+                {
+                    if (!simulating && captured != null) Select(captured);
+                });
+                TMP_Text label = row.GetComponentInChildren<TMP_Text>(true);
+                if (label != null) label.text = marker.Id;
+                row.interactable = !simulating;
+                hierarchyRows[marker] = row;
+                hierarchyRowColors[row] = row.colors;
+            }
+            if (hierarchyScrollRect != null) hierarchyScrollRect.verticalNormalizedPosition = scrollPosition;
+            RefreshHierarchySelection();
+        }
+
+        private void ClearHierarchyItems()
+        {
+            foreach (KeyValuePair<CollaborativeLevelObject, Button> pair in hierarchyRows)
+                if (pair.Value != null)
+                {
+                    pair.Value.gameObject.SetActive(false);
+                    Destroy(pair.Value.gameObject);
+                }
+            hierarchyRows.Clear();
+            hierarchyRowColors.Clear();
+        }
+
+        private void RemoveHierarchyItem(CollaborativeLevelObject marker)
+        {
+            if (marker == null || !hierarchyRows.TryGetValue(marker, out Button row)) return;
+            hierarchyRows.Remove(marker);
+            if (row != null)
+            {
+                hierarchyRowColors.Remove(row);
+                row.gameObject.SetActive(false);
+                Destroy(row.gameObject);
+            }
+        }
+
+        private void RefreshHierarchySelection()
+        {
+            foreach (KeyValuePair<CollaborativeLevelObject, Button> pair in hierarchyRows)
+            {
+                Button row = pair.Value;
+                if (row == null || !hierarchyRowColors.TryGetValue(row, out ColorBlock original)) continue;
+                ColorBlock colors = original;
+                if (pair.Key == selected)
+                {
+                    colors.normalColor = original.selectedColor;
+                    colors.highlightedColor = original.selectedColor;
+                }
+                row.colors = colors;
+            }
+        }
+
+        private void SetHierarchyInteractable(bool interactable)
+        {
+            foreach (Button row in hierarchyRows.Values)
+                if (row != null) row.interactable = interactable;
+        }
+
         private static RectTransform CreatePanel(Transform parent, string name, Color color)
         {
             GameObject panel = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             panel.transform.SetParent(parent, false);
             panel.GetComponent<Image>().color = color;
             return panel.GetComponent<RectTransform>();
+        }
+
+        private static RectTransform CreatePlacedHierarchyUi(
+            Transform canvasRoot,
+            RectTransform palette,
+            out RectTransform content,
+            out Button itemTemplate,
+            out ScrollRect scrollRect)
+        {
+            RectTransform panel = CreatePanel(canvasRoot, "PlacedHierarchy", new Color(0.96f, 0.95f, 0.90f, 0.97f));
+            ConfigurePlacedHierarchyRect(panel, palette);
+            TMP_Text title = AddText(panel, "PlacedHierarchyTitle", Vector2.zero, Vector2.zero, 24f, TextAlignmentOptions.Center);
+            title.text = "HIERARCHY";
+            title.color = new Color(0.12f, 0.14f, 0.16f, 1f);
+            RectTransform titleRect = title.rectTransform;
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.offsetMin = new Vector2(10f, -52f);
+            titleRect.offsetMax = new Vector2(-10f, -8f);
+
+            GameObject scrollObject = new GameObject("PlacedHierarchyScrollView", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(ScrollRect));
+            scrollObject.transform.SetParent(panel, false);
+            RectTransform scrollTransform = scrollObject.GetComponent<RectTransform>();
+            scrollTransform.anchorMin = Vector2.zero;
+            scrollTransform.anchorMax = Vector2.one;
+            scrollTransform.offsetMin = new Vector2(10f, 10f);
+            scrollTransform.offsetMax = new Vector2(-22f, -58f);
+            Image scrollImage = scrollObject.GetComponent<Image>();
+            scrollImage.color = new Color(1f, 1f, 1f, 0.001f);
+            scrollImage.raycastTarget = true;
+
+            GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(RectMask2D));
+            viewportObject.transform.SetParent(scrollObject.transform, false);
+            RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+            StretchToParent(viewport);
+            Image viewportImage = viewportObject.GetComponent<Image>();
+            viewportImage.color = new Color(1f, 1f, 1f, 0.001f);
+            viewportImage.raycastTarget = true;
+
+            GameObject contentObject = new GameObject("PlacedHierarchyContent", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            contentObject.transform.SetParent(viewport, false);
+            content = contentObject.GetComponent<RectTransform>();
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero;
+            VerticalLayoutGroup layout = contentObject.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = 6f;
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            itemTemplate = AddButton(content, "HierarchyItemTemplate", Vector2.zero, () => { });
+            itemTemplate.gameObject.name = "HierarchyItemTemplate";
+            RectTransform templateRect = itemTemplate.GetComponent<RectTransform>();
+            templateRect.sizeDelta = new Vector2(230f, 44f);
+            TMP_Text templateLabel = itemTemplate.GetComponentInChildren<TMP_Text>(true);
+            if (templateLabel != null) templateLabel.text = "object_id";
+            itemTemplate.gameObject.SetActive(false);
+
+            GameObject scrollbarObject = new GameObject("Scrollbar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Scrollbar));
+            scrollbarObject.transform.SetParent(panel, false);
+            RectTransform scrollbarTransform = scrollbarObject.GetComponent<RectTransform>();
+            scrollbarTransform.anchorMin = new Vector2(1f, 0f);
+            scrollbarTransform.anchorMax = new Vector2(1f, 1f);
+            scrollbarTransform.pivot = new Vector2(1f, 0.5f);
+            scrollbarTransform.offsetMin = new Vector2(-18f, 10f);
+            scrollbarTransform.offsetMax = new Vector2(-6f, -58f);
+            scrollbarObject.GetComponent<Image>().color = new Color(0.15f, 0.16f, 0.18f, 0.32f);
+
+            GameObject slidingObject = new GameObject("Sliding Area", typeof(RectTransform));
+            slidingObject.transform.SetParent(scrollbarObject.transform, false);
+            RectTransform sliding = slidingObject.GetComponent<RectTransform>();
+            sliding.anchorMin = Vector2.zero;
+            sliding.anchorMax = Vector2.one;
+            sliding.offsetMin = new Vector2(2f, 2f);
+            sliding.offsetMax = new Vector2(-2f, -2f);
+
+            GameObject handleObject = new GameObject("Handle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            handleObject.transform.SetParent(sliding, false);
+            RectTransform handle = handleObject.GetComponent<RectTransform>();
+            StretchToParent(handle);
+            Image handleImage = handleObject.GetComponent<Image>();
+            handleImage.color = new Color(0.36f, 0.38f, 0.42f, 0.9f);
+
+            Scrollbar scrollbar = scrollbarObject.GetComponent<Scrollbar>();
+            scrollbar.handleRect = handle;
+            scrollbar.targetGraphic = handleImage;
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.value = 1f;
+
+            scrollRect = scrollObject.GetComponent<ScrollRect>();
+            scrollRect.content = content;
+            scrollRect.viewport = viewport;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Elastic;
+            scrollRect.inertia = true;
+            scrollRect.scrollSensitivity = 35f;
+            scrollRect.verticalScrollbar = scrollbar;
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+            scrollRect.verticalNormalizedPosition = 1f;
+            return panel;
+        }
+
+        private static void ConfigurePlacedHierarchyRect(RectTransform panel, RectTransform palette)
+        {
+            if (panel == null) return;
+            float paletteHeight = palette != null && palette.rect.height > 0f ? palette.rect.height : PaletteHeight;
+            panel.anchorMin = new Vector2(0f, 0f);
+            panel.anchorMax = new Vector2(0f, 1f);
+            panel.pivot = new Vector2(0f, 0.5f);
+            panel.offsetMin = new Vector2(0f, paletteHeight);
+            panel.offsetMax = new Vector2(PlacedHierarchyWidth, -TopBarHeight);
         }
 
         private static void ConfigureBottomPaletteRect(RectTransform palette)
