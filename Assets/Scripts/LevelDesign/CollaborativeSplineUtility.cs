@@ -35,6 +35,8 @@ namespace BallGame.LevelDesign
         public bool IsTrackIntersection { get; private set; }
         public bool IsEntry { get; private set; }
         public bool Upper { get; private set; }
+        public bool IsObstacleSizeHandle { get; private set; }
+        public int SizeHandleSide { get; private set; }
 
         public void Initialize(CollaborativeLevelObject owner, int pointIndex)
         {
@@ -43,6 +45,8 @@ namespace BallGame.LevelDesign
             IsTrackIntersection = false;
             IsEntry = false;
             Upper = false;
+            IsObstacleSizeHandle = false;
+            SizeHandleSide = 0;
         }
 
         public void InitializeTrackPoint(CollaborativeLevelObject owner, bool upper, int pointIndex)
@@ -52,6 +56,8 @@ namespace BallGame.LevelDesign
             IsTrackIntersection = true;
             IsEntry = false;
             Upper = upper;
+            IsObstacleSizeHandle = false;
+            SizeHandleSide = 0;
         }
 
         public void InitializeTrackEntry(CollaborativeLevelObject owner, bool upper)
@@ -61,6 +67,19 @@ namespace BallGame.LevelDesign
             IsTrackIntersection = true;
             IsEntry = true;
             Upper = upper;
+            IsObstacleSizeHandle = false;
+            SizeHandleSide = 0;
+        }
+
+        public void InitializeObstacleSize(CollaborativeLevelObject owner, int side)
+        {
+            Owner = owner;
+            PointIndex = -1;
+            IsTrackIntersection = false;
+            IsEntry = false;
+            Upper = false;
+            IsObstacleSizeHandle = true;
+            SizeHandleSide = side < 0 ? -1 : 1;
         }
     }
 }

@@ -23,16 +23,16 @@ PluginImporter:
         Exclude Win: 0
         Exclude Win64: 0
   - first:
-      Any: 
-    second:
-      enabled: 0
-      settings: {}
-  - first:
       Android: Android
     second:
       enabled: 0
       settings:
         CPU: AnyCPU
+  - first:
+      Any: 
+    second:
+      enabled: 0
+      settings: {}
   - first:
       Editor: Editor
     second:
@@ -66,12 +66,12 @@ PluginImporter:
       settings:
         CPU: AnyCPU
   - first:
-      WeixinMiniGame: WeixinMiniGame
+      WebGL: WebGL
     second:
       enabled: 1
       settings: {}
   - first:
-      WebGL: WebGL
+      WeixinMiniGame: WeixinMiniGame
     second:
       enabled: 1
       settings: {}

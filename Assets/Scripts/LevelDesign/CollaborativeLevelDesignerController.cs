@@ -69,6 +69,8 @@ namespace BallGame.LevelDesign
         private bool dragging;
         private bool canvasPanning;
         private Vector2 dragOffset;
+        private Vector2 sizeHandleFixedWorld;
+        private Vector2 sizeHandleAxisWorld;
         private Vector2 lastPanScreenPosition;
         private bool simulating;
         private string editSnapshot;
@@ -705,6 +707,7 @@ namespace BallGame.LevelDesign
                 draggedSplineHandle = FindSplineHandle(hits);
                 if (draggedSplineHandle != null)
                 {
+                    BeginHandleDrag(draggedSplineHandle);
                     PushUndo();
                     dragging = true;
                     return;
@@ -728,7 +731,17 @@ namespace BallGame.LevelDesign
             if (dragging && draggedSplineHandle != null && Input.GetMouseButton(0))
             {
                 CollaborativeLevelObject owner = draggedSplineHandle.Owner;
-                if (owner != null && draggedSplineHandle.IsTrackIntersection)
+                if (owner != null && draggedSplineHandle.IsObstacleSizeHandle)
+                {
+                    ResizeObstacleFromEndpoint(
+                        owner,
+                        draggedSplineHandle.SizeHandleSide,
+                        sizeHandleFixedWorld,
+                        sizeHandleAxisWorld,
+                        world);
+                    UpdateSplineHandlePositions();
+                }
+                else if (owner != null && draggedSplineHandle.IsTrackIntersection)
                 {
                     TrackIntersectionEditable2D editable = owner.GetComponent<TrackIntersectionEditable2D>();
                     CollaborativeTrackIntersectionData data = owner.TrackIntersection;
@@ -811,6 +824,36 @@ namespace BallGame.LevelDesign
         {
             Transform splineTransform = editable.GetSpline(upper).transform;
             local = splineTransform.InverseTransformPoint(world);
+        }
+
+        private void BeginHandleDrag(CollaborativeSplineHandle handle)
+        {
+            if (handle == null || !handle.IsObstacleSizeHandle || handle.Owner == null) return;
+            if (!SizeEditable2DUtility.TryGet(handle.Owner.gameObject, out ISizeEditable2D editable)) return;
+            sizeHandleAxisWorld = handle.Owner.transform.rotation * Vector3.right;
+            sizeHandleAxisWorld.Normalize();
+            sizeHandleFixedWorld = (Vector2)handle.Owner.transform.position
+                - sizeHandleAxisWorld * (handle.SizeHandleSide * editable.Size.x * 0.5f);
+        }
+
+        private static bool ResizeObstacleFromEndpoint(
+            CollaborativeLevelObject owner,
+            int side,
+            Vector2 fixedWorld,
+            Vector2 axisWorld,
+            Vector2 pointerWorld)
+        {
+            if (owner == null || owner.AssetKey != "obstacle"
+                || !SizeEditable2DUtility.TryGet(owner.gameObject, out ISizeEditable2D editable)) return false;
+            side = side < 0 ? -1 : 1;
+            axisWorld.Normalize();
+            if (axisWorld.sqrMagnitude < 0.99f) return false;
+            float width = Mathf.Max(0.01f, Vector2.Dot(pointerWorld - fixedWorld, axisWorld) * side);
+            Vector2 center = fixedWorld + axisWorld * (side * width * 0.5f);
+            Vector3 position = owner.transform.position;
+            owner.transform.position = new Vector3(center.x, center.y, position.z);
+            editable.SetSize(new Vector2(width, editable.Size.y));
+            return true;
         }
 
         private CollaborativeLevelObject FindObjectAt(Vector2 world, Collider2D[] hits)
@@ -1233,6 +1276,12 @@ namespace BallGame.LevelDesign
                     CreateTrackHandle(splineTransform.TransformPoint(curve.points[i].position), new Color(1f, 0.72f, 0.18f, 1f), i, upper, false);
                 return;
             }
+            if (selected.AssetKey == "obstacle" && SizeEditable2DUtility.TryGet(selected.gameObject, out ISizeEditable2D obstacleSize))
+            {
+                CreateObstacleSizeHandle(-1, obstacleSize.Size.x);
+                CreateObstacleSizeHandle(1, obstacleSize.Size.x);
+                return;
+            }
             if (selected.Kind != CollaborativeObjectKind.SplineTool) return;
             for (int i = 0; i < selected.SplinePoints.Count; i++)
             {
@@ -1266,6 +1315,21 @@ namespace BallGame.LevelDesign
             else marker.InitializeTrackPoint(selected, upper, pointIndex);
         }
 
+        private void CreateObstacleSizeHandle(int side, float width)
+        {
+            GameObject handle = new GameObject(side < 0 ? "Obstacle Left Endpoint" : "Obstacle Right Endpoint",
+                typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(CollaborativeSplineHandle));
+            handle.transform.SetParent(splineHandleRoot, false);
+            handle.transform.position = selected.transform.TransformPoint(new Vector2(side * width * 0.5f, 0f));
+            handle.transform.localScale = Vector3.one * 0.32f;
+            SpriteRenderer renderer = handle.GetComponent<SpriteRenderer>();
+            renderer.sprite = GetHandleSprite();
+            renderer.color = new Color(0.20f, 0.78f, 1f, 1f);
+            renderer.sortingOrder = 1000;
+            handle.GetComponent<CircleCollider2D>().radius = 0.6f;
+            handle.GetComponent<CollaborativeSplineHandle>().InitializeObstacleSize(selected, side);
+        }
+
         private void UpdateSplineHandlePositions()
         {
             if (selected == null || splineHandleRoot == null) return;
@@ -1274,7 +1338,13 @@ namespace BallGame.LevelDesign
             {
                 CollaborativeSplineHandle handle = handles[i];
                 if (handle.Owner != selected) continue;
-                if (handle.IsTrackIntersection)
+                if (handle.IsObstacleSizeHandle)
+                {
+                    if (SizeEditable2DUtility.TryGet(selected.gameObject, out ISizeEditable2D editable))
+                        handle.transform.position = selected.transform.TransformPoint(
+                            new Vector2(handle.SizeHandleSide * editable.Size.x * 0.5f, 0f));
+                }
+                else if (handle.IsTrackIntersection)
                 {
                     TrackIntersectionEditable2D track = selected.GetComponent<TrackIntersectionEditable2D>();
                     if (track == null || selected.TrackIntersection == null) continue;

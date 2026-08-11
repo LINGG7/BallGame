@@ -191,6 +191,66 @@ namespace BallGame.Tests.Editor
         }
 
         [Test]
+        public void ObstacleSelection_CreatesTwoSizeXEndpointsAndKeepsOppositeEndpointFixed()
+        {
+            Type controllerType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelDesignerController, Assembly-CSharp");
+            Type markerType = Type.GetType("BallGame.LevelDesign.CollaborativeLevelObject, Assembly-CSharp");
+            Type handleType = Type.GetType("BallGame.LevelDesign.CollaborativeSplineHandle, Assembly-CSharp");
+            UnityEngine.Object registry = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(RegistryPath);
+            object obstacleEntry = registry.GetType().GetMethod("Find").Invoke(registry, new object[] { "obstacle" });
+            GameObject prefab = (GameObject)obstacleEntry.GetType().GetField("prefab").GetValue(obstacleEntry);
+            GameObject host = new GameObject("Inactive Obstacle Endpoint Test");
+            host.SetActive(false);
+            GameObject obstacle = UnityEngine.Object.Instantiate(prefab);
+            GameObject handleRoot = new GameObject("Obstacle Endpoint Handles");
+            try
+            {
+                Component marker = obstacle.AddComponent(markerType);
+                markerType.GetMethod("Initialize", new[] { typeof(string), obstacleEntry.GetType() })
+                    .Invoke(marker, new[] { "obstacle_1", obstacleEntry });
+                Component editable = obstacle.GetComponentInChildren(Type.GetType("BallGame.Core.ObstacleSize2D, Assembly-CSharp"), true);
+                editable.GetType().GetMethod("SetSize").Invoke(editable, new object[] { new Vector2(4f, 1f) });
+                obstacle.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+
+                Component controller = host.AddComponent(controllerType);
+                controllerType.GetField("selected", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, marker);
+                controllerType.GetField("splineHandleRoot", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(controller, handleRoot.transform);
+                controllerType.GetMethod("RebuildSplineHandles", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(controller, null);
+
+                Component[] handles = handleRoot.GetComponentsInChildren(handleType, true);
+                Assert.That(handles.Length, Is.EqualTo(2));
+                CollectionAssert.AreEquivalent(new[] { -1, 1 }, new[]
+                {
+                    (int)handleType.GetProperty("SizeHandleSide").GetValue(handles[0]),
+                    (int)handleType.GetProperty("SizeHandleSide").GetValue(handles[1])
+                });
+                Assert.That(Array.TrueForAll(handles,
+                    handle => (bool)handleType.GetProperty("IsObstacleSizeHandle").GetValue(handle)), Is.True);
+
+                MethodInfo resize = controllerType.GetMethod("ResizeObstacleFromEndpoint", BindingFlags.NonPublic | BindingFlags.Static);
+                bool resized = (bool)resize.Invoke(null, new object[]
+                {
+                    marker,
+                    1,
+                    new Vector2(0f, -2f),
+                    Vector2.up,
+                    new Vector2(0f, 4f)
+                });
+                Vector2 size = (Vector2)editable.GetType().GetProperty("Size").GetValue(editable);
+                Assert.That(resized, Is.True);
+                Assert.That(size.x, Is.EqualTo(6f).Within(0.001f));
+                Assert.That(size.y, Is.EqualTo(1f).Within(0.001f));
+                Assert.That(Vector2.Distance(obstacle.transform.position, new Vector2(0f, 1f)), Is.LessThan(0.001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+                UnityEngine.Object.DestroyImmediate(obstacle);
+                UnityEngine.Object.DestroyImmediate(handleRoot);
+            }
+        }
+
+        [Test]
         public void DesignerUi_ContainsSizeInputsAndPersistentLabels()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/LevelDesigner/DesignerUI.prefab");
@@ -222,7 +282,6 @@ namespace BallGame.Tests.Editor
             Assert.That(paletteRect.anchorMin, Is.EqualTo(new Vector2(0f, 0f)));
             Assert.That(paletteRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
             Assert.That(paletteRect.sizeDelta.x, Is.EqualTo(-350f).Within(0.01f));
-            Assert.That(paletteRect.sizeDelta.y, Is.EqualTo(120f).Within(0.01f));
             Assert.That(FindChild(palette, "Title").parent, Is.EqualTo(palette));
             Assert.That(content, Is.Not.Null);
             GridLayoutGroup paletteGrid = content.GetComponent<GridLayoutGroup>();

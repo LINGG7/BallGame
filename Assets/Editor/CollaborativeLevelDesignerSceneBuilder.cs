@@ -332,7 +332,6 @@ namespace BallGame.Editor
                 && currentPaletteRect.anchorMin == new Vector2(0f, 0f)
                 && currentPaletteRect.anchorMax == new Vector2(1f, 0f)
                 && Mathf.Approximately(currentPaletteRect.sizeDelta.x, -350f)
-                && Mathf.Approximately(currentPaletteRect.sizeDelta.y, 120f)
                 && !HasDirectPaletteButtons(currentPalette)) return;
 
             GameObject root = PrefabUtility.LoadPrefabContents(UiPrefabPath);
@@ -510,11 +509,12 @@ namespace BallGame.Editor
         private static void ConfigureBottomPalette(RectTransform palette)
         {
             if (palette == null) throw new System.InvalidOperationException("DesignerUI Palette has no RectTransform.");
+            float preservedHeight = palette.sizeDelta.y;
             palette.anchorMin = new Vector2(0f, 0f);
             palette.anchorMax = new Vector2(1f, 0f);
             palette.pivot = new Vector2(0.5f, 0f);
             palette.offsetMin = Vector2.zero;
-            palette.offsetMax = new Vector2(-350f, 120f);
+            palette.offsetMax = new Vector2(-350f, preservedHeight);
         }
 
         [MenuItem("Ball Game/Level Design/Upgrade Designer UI Placed Hierarchy")]
