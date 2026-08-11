@@ -114,6 +114,62 @@ namespace BallGame.Tests
             }
         }
 
+        [Test]
+        public void DirectionalForce_MakesNetAccelerationFollowFieldUp()
+        {
+            MethodInfo calculate = FieldType.GetMethod("CalculateDirectionalForce", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(calculate, Is.Not.Null);
+            Vector2 gravity = new Vector2(0f, -9.81f);
+            float gravityScale = 1.35f;
+            Vector2[] directions = { Vector2.up, Vector2.right, Vector2.down, Vector2.left };
+            float[] masses = { 0.75f, 3.2f };
+
+            foreach (float mass in masses)
+            {
+                foreach (Vector2 direction in directions)
+                {
+                    Vector2 force = (Vector2)calculate.Invoke(null, new object[]
+                    {
+                        direction,
+                        gravity,
+                        gravityScale,
+                        mass
+                    });
+                    Vector2 netAcceleration = gravity * gravityScale + force / mass;
+                    Vector2 expected = direction * gravity.magnitude * gravityScale;
+                    Assert.That(Vector2.Distance(netAcceleration, expected), Is.LessThan(0.0001f));
+                }
+            }
+
+            Vector2 upwardForce = (Vector2)calculate.Invoke(null, new object[]
+            {
+                Vector2.up,
+                gravity,
+                gravityScale,
+                2f
+            });
+            Assert.That(Vector2.Distance(upwardForce, -2f * gravity * gravityScale * 2f), Is.LessThan(0.0001f),
+                "An unrotated field must preserve the previous anti-gravity force.");
+        }
+
+        [Test]
+        public void FlowShader_UsesObjectAlignedCoordinates()
+        {
+            string shader = File.ReadAllText("Assets/Resources/Shaders/AntiGravityFlow.shader");
+            StringAssert.Contains("worldRight", shader);
+            StringAssert.Contains("worldUp", shader);
+            StringAssert.Contains("i.flowPos", shader);
+            StringAssert.DoesNotContain("i.worldPos", shader);
+        }
+
+        [Test]
+        public void InventoryAntiGravity_RemainsNonRotatable()
+        {
+            UnityEngine.Object definition = AssetDatabase.LoadMainAssetAtPath("Assets/Tools/AntiGravity.asset");
+            Assert.That(definition, Is.Not.Null);
+            Assert.That(new SerializedObject(definition).FindProperty("canRotate").boolValue, Is.False);
+        }
+
         private static GameObject CreateBody(
             string name,
             bool addBall,

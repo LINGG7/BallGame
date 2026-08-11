@@ -3527,7 +3527,7 @@ MonoBehaviour:
   nextButton: {fileID: 1358848895}
   returnButton: {fileID: 0}
   level: {fileID: 11400000, guid: 98c2378b0e7c2014ab70db4cb0198826, type: 2}
-  nextSceneName: 
+  nextSceneName: "Level_21_\u7B11\u8138\u76F8\u8FCE"
   failY: -12
   simulationTimeout: 25
   failureResetDelay: 2

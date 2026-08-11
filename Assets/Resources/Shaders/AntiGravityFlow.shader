@@ -57,7 +57,7 @@ Shader "BallGame/Anti-Gravity Flow"
             {
                 float4 vertex : SV_POSITION;
                 float2 uv : TEXCOORD0;
-                float2 worldPos : TEXCOORD1;
+                float2 flowPos : TEXCOORD1;
                 fixed4 color : COLOR;
             };
 
@@ -66,7 +66,12 @@ Shader "BallGame/Anti-Gravity Flow"
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
-                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xy;
+                float2 worldPos = mul(unity_ObjectToWorld, v.vertex).xy;
+                float2 worldOrigin = mul(unity_ObjectToWorld, float4(0, 0, 0, 1)).xy;
+                float2 worldRight = normalize(mul((float3x3)unity_ObjectToWorld, float3(1, 0, 0)).xy);
+                float2 worldUp = normalize(mul((float3x3)unity_ObjectToWorld, float3(0, 1, 0)).xy);
+                float2 relativeWorldPos = worldPos - worldOrigin;
+                o.flowPos = float2(dot(relativeWorldPos, worldRight), dot(relativeWorldPos, worldUp));
                 o.color = v.color * _Color;
                 return o;
             }
@@ -76,18 +81,18 @@ Shader "BallGame/Anti-Gravity Flow"
                 fixed4 tex = tex2D(_MainTex, i.uv);
                 float time = _Time.y;
 
-                float column = sin(i.worldPos.x * 5.2) * 0.5 + sin(i.worldPos.x * 9.7 + 1.4) * 0.25;
-                float risingPhase = frac((i.worldPos.y + column * 0.12) * _FlowDensity - time * _FlowSpeed);
+                float column = sin(i.flowPos.x * 5.2) * 0.5 + sin(i.flowPos.x * 9.7 + 1.4) * 0.25;
+                float risingPhase = frac((i.flowPos.y + column * 0.12) * _FlowDensity - time * _FlowSpeed);
                 float streak = 1.0 - smoothstep(0.04, 0.22, risingPhase);
-                streak *= 0.55 + 0.45 * saturate(sin(i.worldPos.x * 7.0 + 2.1) * 0.5 + 0.5);
+                streak *= 0.55 + 0.45 * saturate(sin(i.flowPos.x * 7.0 + 2.1) * 0.5 + 0.5);
 
-                float2 arrowCell = frac(float2(i.worldPos.x * 0.72, i.worldPos.y * 0.75 - time * _FlowSpeed * 0.32)) - 0.5;
+                float2 arrowCell = frac(float2(i.flowPos.x * 0.72, i.flowPos.y * 0.75 - time * _FlowSpeed * 0.32)) - 0.5;
                 float chevron = 1.0 - smoothstep(0.035, 0.105, abs(abs(arrowCell.x) - (0.34 - arrowCell.y) * 0.72));
                 chevron *= step(-0.1, arrowCell.y) * (1.0 - step(0.34, arrowCell.y));
 
                 float edgeDistance = min(min(i.uv.x, 1.0 - i.uv.x), min(i.uv.y, 1.0 - i.uv.y));
                 float edge = 1.0 - smoothstep(0.025, 0.085, edgeDistance);
-                float edgePulse = edge * (0.55 + 0.45 * sin(time * 2.2 + i.worldPos.y * 1.6));
+                float edgePulse = edge * (0.55 + 0.45 * sin(time * 2.2 + i.flowPos.y * 1.6));
 
                 float flowEnergy = saturate(streak * 0.5 + edgePulse * _EdgePulseStrength);
                 float arrowEnergy = saturate(chevron * _ArrowStrength);

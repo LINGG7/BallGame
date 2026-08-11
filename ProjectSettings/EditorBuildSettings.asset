@@ -98,4 +98,31 @@ EditorBuildSettings:
   - enabled: 1
     path: "Assets/Scenes/NormalLevels/Level_21_\u7B11\u8138\u76F8\u8FCE.unity"
     guid: 38313147b45d75049ad30c8410088956
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_22_\u7A7F\u8D8A\u78C1\u573A.unity"
+    guid: c804ba4f9202b33419463e06a6c7bc27
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_23_\u7535\u78C1\u70AE.unity"
+    guid: e5d94e100c49a24449ce19e19fde96d0
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_24_\u8FF7\u5BAB.unity"
+    guid: aba3278c39246eb4c86c7a63dd580fb8
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_25_\u6500\u767B.unity"
+    guid: 6dbf53438ec65b446ae52a15dbe2bdd9
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_26_\u4E0B100\u5C42.unity"
+    guid: cc1b9dd19b31d424d9b2b43edd98ad9c
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_27_\u5144\u5F1F\u4F60\u522B\u5F71\u54CD\u6211.unity"
+    guid: b658f552dc0644d43acf755492f7cfda
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_28_\u4F11\u606F\u4E00\u4E0B.unity"
+    guid: c3e8b88121e6d3f4d8fed6548df46f2b
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_29_\u8FD9\u5173\u80FD\u8FC7.unity"
+    guid: 02917ef8725b05f46820aadb7fef8a0f
+  - enabled: 1
+    path: "Assets/Scenes/NormalLevels/Level_30_\u5927\u6742\u70E9.unity"
+    guid: cf28056e502c8924b8dc0a979c911dd2
   m_configObjects: {}

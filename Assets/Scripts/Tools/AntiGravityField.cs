@@ -52,8 +52,12 @@ namespace BallGame.Tools
                     continue;
                 }
 
-                Vector2 reverseGravityForce = -2f * Physics2D.gravity * body.gravityScale * body.mass;
-                body.AddForce(reverseGravityForce, ForceMode2D.Force);
+                Vector2 directionalAntiGravityForce = CalculateDirectionalForce(
+                    transform.up,
+                    Physics2D.gravity,
+                    body.gravityScale,
+                    body.mass);
+                body.AddForce(directionalAntiGravityForce, ForceMode2D.Force);
                 hasAffectedBall |= IsDynamicBall(body);
             }
 
@@ -96,6 +100,18 @@ namespace BallGame.Tools
             return body != null
                 && body.bodyType == RigidbodyType2D.Dynamic
                 && body.GetComponentInParent<BallControllerBase>() != null;
+        }
+
+        private static Vector2 CalculateDirectionalForce(
+            Vector2 fieldUp,
+            Vector2 worldGravity,
+            float gravityScale,
+            float mass)
+        {
+            Vector2 direction = fieldUp.sqrMagnitude > 0.0001f ? fieldUp.normalized : Vector2.up;
+            Vector2 currentGravityAcceleration = worldGravity * gravityScale;
+            Vector2 targetAcceleration = direction * worldGravity.magnitude * gravityScale;
+            return (targetAcceleration - currentGravityAcceleration) * mass;
         }
 
         private void RefreshShape()

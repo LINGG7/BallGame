@@ -10,27 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b8a8999e767bf94191264ce44bd7e28, type: 3}
-  m_Name: Level_21_LevelTest3
+  m_Name: "Level_26_\u4E0B100\u5C42"
   m_EditorClassIdentifier: 
-  levelTitle: LevelTest3
+  levelTitle: "\u4E0B100\u5C42"
   mode: 0
   toolCatalog: {fileID: 0}
   tools:
   - tool: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
-    count: 1
-  - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
-    count: 1
-  - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
-    count: 1
-  - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
-    count: 1
-  - tool: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
-    count: 1
-  - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
-    count: 1
-  - tool: {fileID: 11400000, guid: 752ac040948521647b593ccba1b7e68f, type: 2}
     count: 2
-  - tool: {fileID: 11400000, guid: 7444849728177284aa7e218d6d66f0b5, type: 2}
-    count: 1
+  - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+    count: 2
   - tool: {fileID: 11400000, guid: 04d1495afc2f43d4bb5fb6c94a019c29, type: 2}
     count: 1
