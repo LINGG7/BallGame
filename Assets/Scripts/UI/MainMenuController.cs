@@ -17,6 +17,9 @@ namespace BallGame.UI
         [SerializeField] private LevelCatalog levelCatalog;
         [SerializeField] private LevelCatalog challengeLevelCatalog;
 
+        [Header("Testing")]
+        [SerializeField] private bool unlockAllLevelsForTesting;
+
         [Header("Main Menu")]
         [SerializeField] private Button normalButton;
         [SerializeField] private GameObject levelSelectRoot;
@@ -372,7 +375,9 @@ namespace BallGame.UI
                 }
 
                 LevelCatalog.LevelEntry level = levelCatalog.Levels[levelIndex];
-                bool isUnlocked = LevelProgress.IsUnlocked(level.LevelNumber, levelCatalog);
+                bool isUnlocked = ResolveLevelUnlocked(
+                    unlockAllLevelsForTesting,
+                    LevelProgress.IsUnlocked(level.LevelNumber, levelCatalog));
 
                 if (label != null)
                 {
@@ -433,7 +438,9 @@ namespace BallGame.UI
                 }
 
                 LevelCatalog.LevelEntry level = challengeLevelCatalog.Levels[levelIndex];
-                bool isUnlocked = ChallengeProgress.IsUnlocked(level.LevelNumber, challengeLevelCatalog);
+                bool isUnlocked = ResolveLevelUnlocked(
+                    unlockAllLevelsForTesting,
+                    ChallengeProgress.IsUnlocked(level.LevelNumber, challengeLevelCatalog));
                 if (titleLabel != null)
                 {
                     titleLabel.text = level.DisplayTitle;
@@ -613,6 +620,11 @@ namespace BallGame.UI
             colors.selectedColor = colors.highlightedColor;
             colors.disabledColor = new Color(0.42f, 0.42f, 0.42f, 0.72f);
             button.colors = colors;
+        }
+
+        private static bool ResolveLevelUnlocked(bool unlockAllLevels, bool progressionUnlocked)
+        {
+            return unlockAllLevels || progressionUnlocked;
         }
 
         private static void EnsureEventSystem()

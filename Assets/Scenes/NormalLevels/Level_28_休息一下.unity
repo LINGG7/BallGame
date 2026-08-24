@@ -287,7 +287,7 @@ Transform:
   m_GameObject: {fileID: 326470272}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: -5.43, y: 7.26, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -577,8 +577,8 @@ MonoBehaviour:
   nextButton: {fileID: 406293074}
   returnButton: {fileID: 0}
   level: {fileID: 11400000, guid: c0bf09efc9638c44c8f2ae525a707f32, type: 2}
-  nextSceneName: "Level_29_\u8FD9\u5173\u80FD\u8FC7?"
-  failY: -8
+  nextSceneName: "Level_29_\u8FD9\u5173\u80FD\u8FC7\uFF1F"
+  failY: -12
   simulationTimeout: 25
   failureResetDelay: 2
   requiredGoalBallCount: 1
@@ -886,6 +886,10 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -7678590585748511352, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 10.8
+      objectReference: {fileID: 0}
     - target: {fileID: -7146962913762213739, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Color.b
       value: 1
@@ -897,6 +901,14 @@ PrefabInstance:
     - target: {fileID: -7146962913762213739, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Color.r
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5861575336751432254, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 10.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -4519982587997537479, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -4480289584102671996, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Color.b
@@ -922,6 +934,14 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -3079816267095995579, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -1774135746770555599, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 10.8
+      objectReference: {fileID: 0}
     - target: {fileID: 752567965868658628, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Color.b
       value: 1
@@ -933,6 +953,10 @@ PrefabInstance:
     - target: {fileID: 752567965868658628, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Color.r
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1796306555104109884, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 21.6
       objectReference: {fileID: 0}
     - target: {fileID: 1961942846370663594, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_LocalPosition.x
@@ -986,6 +1010,10 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3081814428528409917, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 21.6
+      objectReference: {fileID: 0}
     - target: {fileID: 4279519627426737537, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Color.b
       value: 1
@@ -1001,6 +1029,14 @@ PrefabInstance:
     - target: {fileID: 4377975413676441430, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Name
       value: WorldBackground
+      objectReference: {fileID: 0}
+    - target: {fileID: 4869543533584397351, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5298872313897928665, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 21.6
       objectReference: {fileID: 0}
     - target: {fileID: 7527224924602633881, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Color.b

@@ -2928,7 +2928,7 @@ MonoBehaviour:
   returnButton: {fileID: 0}
   level: {fileID: 11400000, guid: 628049d8cdded9948846008df91bcd2e, type: 2}
   nextSceneName: "Level_22_\u7A7F\u8D8A\u78C1\u573A"
-  failY: -8
+  failY: -12
   simulationTimeout: 25
   failureResetDelay: 2
   requiredGoalBallCount: 1

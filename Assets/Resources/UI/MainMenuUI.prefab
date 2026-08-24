@@ -127,6 +127,7 @@ MonoBehaviour:
   targetFrameRate: 60
   levelCatalog: {fileID: 11400000, guid: 9381047b70f84c2fbafad9ed33caf002, type: 2}
   challengeLevelCatalog: {fileID: 11400000, guid: e5097e2a2f6a44b0ab7b586ba927479b, type: 2}
+  unlockAllLevelsForTesting: 1
   normalButton: {fileID: 200145}
   levelSelectRoot: {fileID: 0}
   levelSelectPanel: {fileID: 0}

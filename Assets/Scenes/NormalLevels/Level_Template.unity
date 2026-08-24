@@ -606,8 +606,8 @@ MonoBehaviour:
   nextButton: {fileID: 406293074}
   returnButton: {fileID: 0}
   level: {fileID: 11400000, guid: 9ff1b25414c652545914deeb17de6d06, type: 2}
-  nextSceneName: Level_02
-  failY: -8
+  nextSceneName: 
+  failY: -12
   simulationTimeout: 25
   failureResetDelay: 2
   requiredGoalBallCount: 1

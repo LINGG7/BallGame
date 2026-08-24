@@ -290,7 +290,7 @@ Transform:
   m_GameObject: {fileID: 326470272}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: -4.62, y: 4.69, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1693,8 +1693,8 @@ MonoBehaviour:
   nextButton: {fileID: 406293074}
   returnButton: {fileID: 0}
   level: {fileID: 11400000, guid: 80c2094ea02dc544d961f732b21e8fc1, type: 2}
-  nextSceneName: Level_02
-  failY: -8
+  nextSceneName: "Level_30_\u5927\u6742\u70E9"
+  failY: -12
   simulationTimeout: 25
   failureResetDelay: 2
   requiredGoalBallCount: 1
