@@ -17,6 +17,8 @@ namespace BallGame.Shop
         public string displayName;
         public Sprite previewSprite;
         public Sprite runtimeSprite;
+        [Range(0.5f, 1f)]
+        public float sphereProjectionRadius = 1f;
         public bool featured;
         public bool initiallyUnlocked;
         public BallSkinUnlockType unlockType;

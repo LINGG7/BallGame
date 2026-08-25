@@ -9685,7 +9685,6 @@ MonoBehaviour:
   mapBounds: {fileID: 548057040}
   followDeadZone: {x: 1.8, y: 1.1}
   followSmoothTime: 0.15
-  buildPanSmoothTime: 0.08
   minOrthographicSize: 3
   maxOrthographicSize: 6
   mouseZoomSpeed: 1
