@@ -10,6 +10,8 @@ namespace BallGame.Core
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Vector2 tileSizeOverride;
         [SerializeField] private Vector2 tilePadding;
+        [SerializeField, Min(1)] private int perspectiveRadiusX = 2;
+        [SerializeField, Min(1)] private int perspectiveRadiusY = 2;
 
         private readonly List<SpriteRenderer> tiles = new List<SpriteRenderer>();
         private SpriteRenderer sourceRenderer;
@@ -106,10 +108,16 @@ namespace BallGame.Core
         private void GetGridRadius(Vector2 tileSize, out int radiusX, out int radiusY)
         {
             Camera cameraToUse = targetCamera != null ? targetCamera : Camera.main;
-            if (!Application.isPlaying || cameraToUse == null || !cameraToUse.orthographic)
+            if (!Application.isPlaying || cameraToUse == null)
             {
                 radiusX = 1;
                 radiusY = 1;
+                return;
+            }
+            if (!cameraToUse.orthographic)
+            {
+                radiusX = Mathf.Max(1, perspectiveRadiusX);
+                radiusY = Mathf.Max(1, perspectiveRadiusY);
                 return;
             }
             float halfHeight = cameraToUse.orthographicSize;

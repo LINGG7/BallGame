@@ -97,3 +97,15 @@ MonoBehaviour:
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 0
+  - assetKey: visual_to_3d_door
+    kind: 2
+    prefab: {fileID: 100000, guid: 5c6d8e1f2a3b4c5d6e7f8091a2b3c4d5, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0
+  - assetKey: visual_to_2d_door
+    kind: 2
+    prefab: {fileID: 2777699536152184172, guid: 97d327342a613e0499444dfc63731b90, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0

@@ -73,6 +73,8 @@ namespace BallGame.LevelDesign
         private Vector2 sizeHandleAxisWorld;
         private Vector2 lastPanScreenPosition;
         private bool simulating;
+        private LevelTestVisual3DBootstrap simulationVisualBootstrap;
+        private bool ownsSimulationVisualBootstrap;
         private string editSnapshot;
         private int nextObjectId = 1;
 
@@ -338,6 +340,7 @@ namespace BallGame.LevelDesign
             if (root == null) return false;
 
             RectTransform paletteRect = FindComponent<RectTransform>(root, "Palette");
+            EnsureRegisteredPaletteButtons(root, paletteRect);
             RectTransform hierarchyPanel = FindComponent<RectTransform>(root, "PlacedHierarchy");
             if (hierarchyPanel == null)
                 CreatePlacedHierarchyUi(root, paletteRect, out hierarchyContent, out hierarchyItemTemplate, out hierarchyScrollRect);
@@ -401,6 +404,24 @@ namespace BallGame.LevelDesign
             RebuildHierarchy();
             BuildLevelSettingsPanel(root);
             return true;
+        }
+
+        private void EnsureRegisteredPaletteButtons(Transform root, RectTransform palette)
+        {
+            if (palette == null || registry == null) return;
+            Transform content = palette.Find("ToolScrollView/Viewport/Content");
+            if (content == null) return;
+
+            for (int i = 0; i < registry.Entries.Count; i++)
+            {
+                CollaborativeLevelAssetEntry entry = registry.Entries[i];
+                if (entry == null || string.IsNullOrWhiteSpace(entry.assetKey)) continue;
+                if (FindComponent<Button>(root, entry.assetKey + "Button") != null) continue;
+
+                Button button = AddButton(content, entry.assetKey, Vector2.zero, () => AddObject(entry));
+                RectTransform rect = button.GetComponent<RectTransform>();
+                rect.sizeDelta = new Vector2(PaletteCellWidth, PaletteCellHeight);
+            }
         }
 
         private static void ConfigureStatusRect(TMP_Text status)
@@ -1011,6 +1032,7 @@ namespace BallGame.LevelDesign
             {
                 editSnapshot = CaptureDocument().ToJson();
                 simulating = true;
+                EnsureSimulationVisualBootstrap();
                 foreach (Rigidbody2D body in worldRoot.GetComponentsInChildren<Rigidbody2D>(true)) body.simulated = true;
                 foreach (BallController ball in worldRoot.GetComponentsInChildren<BallController>(true)) ball.Launch();
                 ApplyAllPortalPairs();
@@ -1022,11 +1044,32 @@ namespace BallGame.LevelDesign
             {
                 SetSimulationPreview(false);
                 simulating = false;
+                DestroyOwnedSimulationVisualBootstrap();
                 LoadDocument(CollaborativeLevelDocument.FromJson(editSnapshot));
                 undo.Clear();
                 redo.Clear();
                 SetStatus("Edit state restored.");
             }
+        }
+
+        private void EnsureSimulationVisualBootstrap()
+        {
+            simulationVisualBootstrap = FindObjectOfType<LevelTestVisual3DBootstrap>();
+            ownsSimulationVisualBootstrap = false;
+            if (simulationVisualBootstrap != null) return;
+
+            GameObject bootstrapObject = new GameObject("LevelDesigner Visual Stage Transition");
+            simulationVisualBootstrap = bootstrapObject.AddComponent<LevelTestVisual3DBootstrap>();
+            ownsSimulationVisualBootstrap = true;
+        }
+
+        private void DestroyOwnedSimulationVisualBootstrap()
+        {
+            if (!ownsSimulationVisualBootstrap || simulationVisualBootstrap == null) return;
+            simulationVisualBootstrap.Restore2DImmediate();
+            Destroy(simulationVisualBootstrap.gameObject);
+            simulationVisualBootstrap = null;
+            ownsSimulationVisualBootstrap = false;
         }
 
         private void SetSimulationPreview(bool playing)

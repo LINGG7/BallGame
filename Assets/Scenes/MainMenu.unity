@@ -4240,6 +4240,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -7678590585748511352, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 19.19
+      objectReference: {fileID: 0}
+    - target: {fileID: -5861575336751432254, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -19.19
+      objectReference: {fileID: 0}
+    - target: {fileID: -3079816267095995579, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 19.19
+      objectReference: {fileID: 0}
     - target: {fileID: 1961942846370663594, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -4280,9 +4292,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3081814428528409917, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 19.19
+      objectReference: {fileID: 0}
     - target: {fileID: 4377975413676441430, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
       propertyPath: m_Name
       value: WorldBackground
+      objectReference: {fileID: 0}
+    - target: {fileID: 4869543533584397351, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -19.19
+      objectReference: {fileID: 0}
+    - target: {fileID: 5298872313897928665, guid: 7996fe1b5f78110448c96d1b43048602, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -19.19
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

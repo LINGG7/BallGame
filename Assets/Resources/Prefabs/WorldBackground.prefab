@@ -100,3 +100,5 @@ MonoBehaviour:
   targetCamera: {fileID: 0}
   tileSizeOverride: {x: 0, y: 0}
   tilePadding: {x: 0, y: 0}
+  perspectiveRadiusX: 2
+  perspectiveRadiusY: 2

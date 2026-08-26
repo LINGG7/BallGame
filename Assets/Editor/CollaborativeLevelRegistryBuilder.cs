@@ -37,6 +37,8 @@ namespace BallGame.Editor
             Add(entries, "obstacle", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/Obstacle.prefab", null, null);
             Add(entries, "curve_obstacle", CollaborativeObjectKind.SplineTool, "Assets/Resources/Prefabs/CurveObstacle.prefab", null, null);
             Add(entries, "track_intersection", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/TrackIntersection.prefab", null, null);
+            Add(entries, "visual_to_3d_door", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/VisualTo3DDoor.prefab", null, null);
+            Add(entries, "visual_to_2d_door", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/VisualTo2DDoor.prefab", null, null);
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(registry);

@@ -327,7 +327,7 @@ namespace BallGame.Core
             if (state == GameState.Build && (is3D || activeTransition != CameraTransition.None)) Restore2DImmediate();
         }
 
-        private void Restore2DImmediate()
+        public void Restore2DImmediate()
         {
             activeTransition = CameraTransition.None;
             is3D = false;
@@ -348,6 +348,7 @@ namespace BallGame.Core
 
         private void OnDestroy()
         {
+            Restore2DImmediate();
             if (gameManager != null) gameManager.StateChanged -= HandleStateChanged;
             if (twoDTexture != null) { twoDTexture.Release(); Destroy(twoDTexture); }
             if (threeDTexture != null) { threeDTexture.Release(); Destroy(threeDTexture); }
