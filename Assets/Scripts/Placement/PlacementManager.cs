@@ -137,6 +137,12 @@ namespace BallGame.Placement
                 preview = previewObject.AddComponent<PlaceableTool>();
             }
 
+            SimulationMover2D simulationMover = previewObject.GetComponent<SimulationMover2D>();
+            if (simulationMover != null)
+            {
+                simulationMover.SetRuntimePlacedInstance(true);
+            }
+
             preview.Initialize(definition);
             AssignPortalPairId(preview);
             preview.transform.position = ScreenToWorld(screenPosition);

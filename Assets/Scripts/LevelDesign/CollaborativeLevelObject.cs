@@ -12,6 +12,7 @@ namespace BallGame.LevelDesign
         public float SplineWidth { get; set; } = 0.5f;
         public bool SplineClosed { get; set; }
         public string SplineCollisionMode { get; set; } = "SolidPolygon";
+        public bool SimulationMoverAttached { get; private set; }
         public List<CollaborativeProperty> Properties { get; } = new List<CollaborativeProperty>();
         public List<CollaborativeSplinePoint> SplinePoints { get; } = new List<CollaborativeSplinePoint>();
         public CollaborativeTrackIntersectionData TrackIntersection { get; private set; }
@@ -21,6 +22,7 @@ namespace BallGame.LevelDesign
             Id = id;
             AssetKey = entry.assetKey;
             Kind = entry.kind;
+            SimulationMoverAttached = false;
             TrackIntersectionEditable2D editable = GetComponent<TrackIntersectionEditable2D>();
             TrackIntersection = editable != null ? editable.CaptureData() : null;
         }
@@ -30,6 +32,7 @@ namespace BallGame.LevelDesign
             Id = record.id;
             AssetKey = record.assetKey;
             Kind = record.kind;
+            SimulationMoverAttached = record.simulationMoverAttached;
             SplineWidth = record.splineWidth;
             SplineClosed = record.splineClosed;
             SplineCollisionMode = record.splineCollisionMode;
@@ -43,11 +46,17 @@ namespace BallGame.LevelDesign
                 : editable != null ? editable.CaptureData() : null;
         }
 
+        public void SetSimulationMoverAttached(bool value)
+        {
+            SimulationMoverAttached = value;
+        }
+
         public CollaborativeObjectRecord ToRecord()
         {
             bool hasSize = SizeEditable2DUtility.TryGet(gameObject, out ISizeEditable2D editable);
             TrackIntersectionEditable2D trackEditable = GetComponent<TrackIntersectionEditable2D>();
             if (trackEditable != null) TrackIntersection = trackEditable.CaptureData(TrackIntersection);
+            SimulationMover2D mover = GetComponent<SimulationMover2D>();
             return new CollaborativeObjectRecord
             {
                 id = Id,
@@ -63,7 +72,15 @@ namespace BallGame.LevelDesign
                 splineCollisionMode = SplineCollisionMode,
                 properties = new List<CollaborativeProperty>(Properties),
                 splinePoints = new List<CollaborativeSplinePoint>(SplinePoints),
-                trackIntersection = TrackIntersection != null ? TrackIntersection.Clone() : null
+                trackIntersection = TrackIntersection != null ? TrackIntersection.Clone() : null,
+                simulationMoverAttached = SimulationMoverAttached && mover != null,
+                simulationMoveEnabled = mover != null && mover.MoveEnabled,
+                simulationMoveSpeed = mover != null ? mover.MoveSpeed : 1f,
+                simulationPingPong = mover == null || mover.PingPong,
+                simulationClosedPath = mover != null && mover.ClosedPath,
+                simulationRotateEnabled = mover != null && mover.RotateEnabled,
+                simulationAngularSpeed = mover != null ? mover.AngularSpeed : 0f,
+                simulationWaypoints = mover != null ? new List<Vector2>(mover.WaypointLocalPositions) : new List<Vector2>()
             };
         }
     }

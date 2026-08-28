@@ -16,7 +16,7 @@ namespace BallGame.LevelDesign
     [Serializable]
     public sealed class CollaborativeLevelDocument
     {
-        public int formatVersion = 4;
+        public int formatVersion = 5;
         public string title = "New Level";
         public string author = string.Empty;
         public string mode = "Normal";
@@ -84,6 +84,14 @@ namespace BallGame.LevelDesign
         public List<CollaborativeProperty> properties = new List<CollaborativeProperty>();
         public List<CollaborativeSplinePoint> splinePoints = new List<CollaborativeSplinePoint>();
         public CollaborativeTrackIntersectionData trackIntersection;
+        public bool simulationMoverAttached;
+        public bool simulationMoveEnabled;
+        public float simulationMoveSpeed = 1f;
+        public bool simulationPingPong = true;
+        public bool simulationClosedPath;
+        public bool simulationRotateEnabled;
+        public float simulationAngularSpeed;
+        public List<Vector2> simulationWaypoints = new List<Vector2>();
     }
 
     [Serializable]
@@ -181,7 +189,7 @@ namespace BallGame.LevelDesign
                 return errors;
             }
 
-            if (document.formatVersion < 1 || document.formatVersion > 4)
+            if (document.formatVersion < 1 || document.formatVersion > 5)
                 errors.Add("Unsupported formatVersion: " + document.formatVersion);
             if (string.IsNullOrWhiteSpace(document.title))
                 errors.Add("title is required.");
@@ -271,6 +279,7 @@ namespace BallGame.LevelDesign
                     else portalPairs[pairId] = portalPairs.TryGetValue(pairId, out int count) ? count + 1 : 1;
                 }
                 ValidateTrackIntersection(document.formatVersion, item, errors);
+                ValidateSimulationMover(item, errors);
             }
 
             if (ballCount == 0) errors.Add("At least one Ball object is required.");
@@ -302,6 +311,19 @@ namespace BallGame.LevelDesign
             ValidateTrackCurve(item.trackIntersection.lowerCurve, "lowerCurve", item.id, errors);
             ValidateAttachment(item.trackIntersection.upperEntryA, "upperEntryA", item.id, errors);
             ValidateAttachment(item.trackIntersection.lowerEntryA, "lowerEntryA", item.id, errors);
+        }
+
+        private static void ValidateSimulationMover(CollaborativeObjectRecord item, List<string> errors)
+        {
+            if (item == null || !item.simulationMoverAttached) return;
+            if (!IsFinite(item.simulationMoveSpeed) || item.simulationMoveSpeed < 0f)
+                errors.Add("Simulation move speed must be finite and non-negative: " + item.id);
+            if (!IsFinite(item.simulationAngularSpeed))
+                errors.Add("Simulation angular speed must be finite: " + item.id);
+            if (item.simulationWaypoints == null) return;
+            foreach (Vector2 waypoint in item.simulationWaypoints)
+                if (!IsFinite(waypoint.x) || !IsFinite(waypoint.y))
+                    errors.Add("Simulation waypoint contains a non-finite coordinate: " + item.id);
         }
 
         private static void ValidateTrackCurve(CollaborativeTrackCurveData curve, string name, string id, List<string> errors)

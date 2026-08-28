@@ -173,3 +173,11 @@ MonoBehaviour:
     sceneName: "Level_40_\u6BCF\u5929\u5F00\u5FC3"
     displayTitle: "40 \u6BCF\u5929\u5F00\u5FC3"
     levelDefinition: {fileID: 11400000, guid: 3fe7d69d2dd321e41a8448086ac72443, type: 2}
+  - levelNumber: 41
+    sceneName: Level_41_Level31231stest
+    displayTitle: 41 Level31231stest
+    levelDefinition: {fileID: 11400000, guid: 8f46ea20045ee4a4c965449e9bf64782, type: 2}
+  - levelNumber: 42
+    sceneName: Level_42_Test69632
+    displayTitle: 42 Test69632
+    levelDefinition: {fileID: 11400000, guid: 5862ca882332cc14f9eecbaea8089276, type: 2}

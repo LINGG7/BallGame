@@ -42,6 +42,7 @@ namespace BallGame.Core
         private Quaternion originalCameraRotation;
         private bool is3D;
         private bool transitionVisualSwitched;
+        private bool cameraStateCaptured;
 
         [SerializeField] private Vector3 perspectiveOffset = new Vector3(-1f, 2.5f, -10f);
         [SerializeField] private Vector3 lookAtOffset = new Vector3(0f, 0.5f, 0f);
@@ -67,11 +68,13 @@ namespace BallGame.Core
             cameraController = FindObjectOfType<CameraController2D>();
             gameManager = FindObjectOfType<GameManager>();
             mainCamera = Camera.main;
-            if (ball == null || mainCamera == null) return;
+            if (mainCamera == null) return;
             originalFov = mainCamera.fieldOfView;
             originalOrthographicSize = mainCamera.orthographicSize;
             originalCameraPosition = mainCamera.transform.position;
             originalCameraRotation = mainCamera.transform.rotation;
+            cameraStateCaptured = true;
+            if (ball == null) return;
 
             visual = ball.GetComponent<BallVisual3DTransition>();
             if (visual == null)
@@ -332,7 +335,7 @@ namespace BallGame.Core
             activeTransition = CameraTransition.None;
             is3D = false;
             if (visual != null) visual.ResetTo2D();
-            if (mainCamera != null)
+            if (mainCamera != null && cameraStateCaptured)
             {
                 mainCamera.targetTexture = null;
                 mainCamera.orthographic = true;

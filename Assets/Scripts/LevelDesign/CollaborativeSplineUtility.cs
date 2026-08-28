@@ -36,6 +36,7 @@ namespace BallGame.LevelDesign
         public bool IsEntry { get; private set; }
         public bool Upper { get; private set; }
         public bool IsObstacleSizeHandle { get; private set; }
+        public bool IsSimulationWaypoint { get; private set; }
         public int SizeHandleSide { get; private set; }
 
         public void Initialize(CollaborativeLevelObject owner, int pointIndex)
@@ -46,6 +47,19 @@ namespace BallGame.LevelDesign
             IsEntry = false;
             Upper = false;
             IsObstacleSizeHandle = false;
+            IsSimulationWaypoint = false;
+            SizeHandleSide = 0;
+        }
+
+        public void InitializeSimulationWaypoint(CollaborativeLevelObject owner, int pointIndex)
+        {
+            Owner = owner;
+            PointIndex = pointIndex;
+            IsTrackIntersection = false;
+            IsEntry = false;
+            Upper = false;
+            IsObstacleSizeHandle = false;
+            IsSimulationWaypoint = true;
             SizeHandleSide = 0;
         }
 
@@ -57,6 +71,7 @@ namespace BallGame.LevelDesign
             IsEntry = false;
             Upper = upper;
             IsObstacleSizeHandle = false;
+            IsSimulationWaypoint = false;
             SizeHandleSide = 0;
         }
 
@@ -68,6 +83,7 @@ namespace BallGame.LevelDesign
             IsEntry = true;
             Upper = upper;
             IsObstacleSizeHandle = false;
+            IsSimulationWaypoint = false;
             SizeHandleSide = 0;
         }
 
@@ -79,6 +95,7 @@ namespace BallGame.LevelDesign
             IsEntry = false;
             Upper = false;
             IsObstacleSizeHandle = true;
+            IsSimulationWaypoint = false;
             SizeHandleSide = side < 0 ? -1 : 1;
         }
     }

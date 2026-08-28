@@ -21,7 +21,7 @@ namespace BallGame.LevelDesign
         private const float MinimumCanvasHeight = 14f;
         private const int DefaultClickSortingOrder = 5;
         private const float PaletteHeight = 120f;
-        private const float InspectorWidth = 350f;
+        private const float InspectorWidth = 430f;
         private const float PaletteCellWidth = 230f;
         private const float PaletteCellHeight = 48f;
         private const float PaletteCellSpacing = 10f;
@@ -35,6 +35,7 @@ namespace BallGame.LevelDesign
         private readonly Dictionary<string, TMP_InputField> levelStockInputs = new Dictionary<string, TMP_InputField>(StringComparer.Ordinal);
         private readonly Dictionary<CollaborativeLevelObject, Button> hierarchyRows = new Dictionary<CollaborativeLevelObject, Button>();
         private readonly Dictionary<Button, ColorBlock> hierarchyRowColors = new Dictionary<Button, ColorBlock>();
+        private readonly Dictionary<Rigidbody2D, bool> editorBodySimulation = new Dictionary<Rigidbody2D, bool>();
         private CollaborativeLevelAssetRegistry registry;
         private CollaborativeLevelDocument document = new CollaborativeLevelDocument();
         private Camera worldCamera;
@@ -59,6 +60,24 @@ namespace BallGame.LevelDesign
         private TMP_InputField trackEntryXInput;
         private TMP_InputField trackEntryYInput;
         private TMP_InputField trackEntryRotationInput;
+        private GameObject simulationMoverPanel;
+        private Toggle simulationMoverAttachedToggle;
+        private Toggle simulationMoveToggle;
+        private Toggle simulationPingPongToggle;
+        private Toggle simulationClosedPathToggle;
+        private Toggle simulationRotateToggle;
+        private TMP_InputField simulationMoveSpeedInput;
+        private TMP_InputField simulationAngularSpeedInput;
+        private TMP_Text simulationWaypointTitle;
+        private TMP_Dropdown simulationWaypointDropdown;
+        private TMP_InputField simulationWaypointXInput;
+        private TMP_InputField simulationWaypointYInput;
+        private Button simulationRemoveWaypointButton;
+        private Button simulationAddWaypointButton;
+        private int selectedWaypointIndex = -1;
+        private bool placingSimulationWaypoint;
+        private bool draggingSimulationWaypoint;
+        private bool simulationWaypointDragUndoCaptured;
         private RectTransform hierarchyContent;
         private Button hierarchyItemTemplate;
         private ScrollRect hierarchyScrollRect;
@@ -101,6 +120,11 @@ namespace BallGame.LevelDesign
             {
                 HandleSimulationCanvasPan();
                 return;
+            }
+            if (placingSimulationWaypoint && Input.GetKeyDown(KeyCode.Escape))
+            {
+                placingSimulationWaypoint = false;
+                SetStatus("Waypoint placement cancelled.");
             }
             HandleWorldPointer();
             if (Input.GetKeyDown(KeyCode.Delete)) DeleteSelected();
@@ -286,7 +310,7 @@ namespace BallGame.LevelDesign
             RebuildHierarchy();
 
             RectTransform inspector = CreatePanel(canvas.transform, "Inspector", new Color(0.96f, 0.95f, 0.90f, 0.97f));
-            Anchor(inspector, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(300f, -68f), new Vector2(0f, -34f));
+            Anchor(inspector, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(InspectorWidth, -68f), new Vector2(0f, -34f));
             selectionText = AddText(inspector, "Selection", new Vector2(150f, -55f), new Vector2(260f, 90f), 22f, TextAlignmentOptions.TopLeft);
             AddButton(inspector, "Rotate -", new Vector2(80f, -110f), () => RotateSelected(-15f));
             AddButton(inspector, "Rotate +", new Vector2(220f, -110f), () => RotateSelected(15f));
@@ -313,6 +337,7 @@ namespace BallGame.LevelDesign
             trackEntryXInput = AddInput(inspector, "Entry X", new Vector2(80f, -775f), _ => ApplyInspectorTransform());
             trackEntryYInput = AddInput(inspector, "Entry Y", new Vector2(220f, -775f), _ => ApplyInspectorTransform());
             trackEntryRotationInput = AddInput(inspector, "Entry Rotation", new Vector2(150f, -830f), _ => ApplyInspectorTransform());
+            CreateSimulationMoverPanel(inspector);
             titleInput.SetTextWithoutNotify(document.title);
             authorInput.SetTextWithoutNotify(document.author);
             RefreshSelection();
@@ -371,6 +396,11 @@ namespace BallGame.LevelDesign
             trackEntryXInput = BindInput(root, "Entry XInput", _ => ApplyInspectorTransform());
             trackEntryYInput = BindInput(root, "Entry YInput", _ => ApplyInspectorTransform());
             trackEntryRotationInput = BindInput(root, "Entry RotationInput", _ => ApplyInspectorTransform());
+            RectTransform inspectorRect = FindComponent<RectTransform>(root, "Inspector");
+            if (inspectorRect != null)
+            {
+                CreateSimulationMoverPanel(inspectorRect);
+            }
 
             BindButton(root, "NewButton", NewDocument);
             BindButton(root, "ImportButton", RequestImport);
@@ -691,7 +721,7 @@ namespace BallGame.LevelDesign
                 marker.SplinePoints.Add(NewSplinePoint(2f, 0f));
                 ApplySpline(marker);
             }
-            SetPhysics(instance, false);
+            CaptureEditorPhysics(instance);
             Select(marker);
             RebuildHierarchy();
         }
@@ -724,6 +754,21 @@ namespace BallGame.LevelDesign
             Vector2 world = ScreenToWorld(Input.mousePosition);
             if (Input.GetMouseButtonDown(0))
             {
+                if (placingSimulationWaypoint && selected != null)
+                {
+                    SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+                    if (mover != null && selected.SimulationMoverAttached)
+                    {
+                        PushUndo();
+                        mover.AddWaypoint(selected.transform.InverseTransformPoint(world));
+                        selectedWaypointIndex = mover.WaypointCount - 1;
+                        placingSimulationWaypoint = false;
+                        RefreshSimulationMoverPanel();
+                        RebuildSplineHandles();
+                        SetStatus("Waypoint added.");
+                    }
+                    return;
+                }
                 Collider2D[] hits = Physics2D.OverlapPointAll(world);
                 draggedSplineHandle = FindSplineHandle(hits);
                 if (draggedSplineHandle != null)
@@ -732,6 +777,19 @@ namespace BallGame.LevelDesign
                     PushUndo();
                     dragging = true;
                     return;
+                }
+                if (selected != null)
+                {
+                    int waypointIndex = FindSimulationWaypointAt(selected, world);
+                    if (waypointIndex >= 0)
+                    {
+                        selectedWaypointIndex = waypointIndex;
+                        dragging = true;
+                        draggingSimulationWaypoint = true;
+                        simulationWaypointDragUndoCaptured = false;
+                        RefreshSimulationMoverPanel();
+                        return;
+                    }
                 }
                 CollaborativeLevelObject marker = selected != null && IsObjectAt(selected, world, hits)
                     ? selected
@@ -789,7 +847,20 @@ namespace BallGame.LevelDesign
                         draggedSplineHandle.transform.position = world;
                     }
                 }
-                else if (owner != null && draggedSplineHandle.PointIndex < owner.SplinePoints.Count)
+                else if (owner != null && draggedSplineHandle.IsSimulationWaypoint)
+                {
+                    SimulationMover2D mover = owner.GetComponent<SimulationMover2D>();
+                    if (mover != null && owner.SimulationMoverAttached && draggedSplineHandle.PointIndex >= 0 && draggedSplineHandle.PointIndex < mover.WaypointCount)
+                    {
+                        if (!simulationWaypointDragUndoCaptured) { PushUndo(); simulationWaypointDragUndoCaptured = true; }
+                        mover.SetWaypointWorldPosition(draggedSplineHandle.PointIndex, world);
+                        draggedSplineHandle.transform.position = world;
+                        selectedWaypointIndex = draggedSplineHandle.PointIndex;
+                        RefreshSimulationMoverPanel();
+                    }
+                }
+                else if (owner != null && draggedSplineHandle.PointIndex >= 0
+                    && draggedSplineHandle.PointIndex < owner.SplinePoints.Count)
                 {
                     owner.SplinePoints[draggedSplineHandle.PointIndex].position = owner.transform.InverseTransformPoint(world);
                     ApplySpline(owner);
@@ -798,6 +869,17 @@ namespace BallGame.LevelDesign
             }
             else if (dragging && selected != null && Input.GetMouseButton(0))
             {
+                if (draggingSimulationWaypoint)
+                {
+                    SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+                    if (mover != null && selected.SimulationMoverAttached && selectedWaypointIndex >= 0)
+                    {
+                        if (!simulationWaypointDragUndoCaptured) { PushUndo(); simulationWaypointDragUndoCaptured = true; }
+                        mover.SetWaypointWorldPosition(selectedWaypointIndex, world);
+                        RefreshSimulationMoverPanel();
+                    }
+                    return;
+                }
                 selected.transform.position = world + dragOffset;
                 UpdateSplineHandlePositions();
             }
@@ -838,7 +920,23 @@ namespace BallGame.LevelDesign
             dragging = false;
             canvasPanning = false;
             draggedSplineHandle = null;
+            draggingSimulationWaypoint = false;
+            simulationWaypointDragUndoCaptured = false;
             if (movedObject) RefreshSelection();
+        }
+
+        private static int FindSimulationWaypointAt(CollaborativeLevelObject owner, Vector2 world)
+        {
+            SimulationMover2D mover = owner != null ? owner.GetComponent<SimulationMover2D>() : null;
+            if (mover == null || owner == null || !owner.SimulationMoverAttached) return -1;
+            float bestDistance = 0.18f * 0.18f;
+            int bestIndex = -1;
+            for (int i = 0; i < mover.WaypointCount; i++)
+            {
+                float distance = (mover.GetWaypointWorldPosition(i) - world).sqrMagnitude;
+                if (distance <= bestDistance) { bestDistance = distance; bestIndex = i; }
+            }
+            return bestIndex;
         }
 
         private static void SplineContainerTransformPoint(TrackIntersectionEditable2D editable, bool upper, Vector2 world, out Vector2 local)
@@ -892,7 +990,7 @@ namespace BallGame.LevelDesign
             CollaborativeLevelObject[] objects = worldRoot.GetComponentsInChildren<CollaborativeLevelObject>(true);
             for (int i = 0; i < objects.Length; i++)
             {
-                SpriteRenderer[] renderers = objects[i].GetComponentsInChildren<SpriteRenderer>(true);
+                Renderer[] renderers = objects[i].GetComponentsInChildren<Renderer>(true);
                 for (int j = 0; j < renderers.Length; j++)
                 {
                     if (!renderers[j].bounds.Contains(world)) continue;
@@ -918,7 +1016,7 @@ namespace BallGame.LevelDesign
                 if (hits[i].GetComponentInParent<CollaborativeLevelObject>() == candidate) return true;
             }
 
-            SpriteRenderer[] renderers = candidate.GetComponentsInChildren<SpriteRenderer>(true);
+            Renderer[] renderers = candidate.GetComponentsInChildren<Renderer>(true);
             for (int i = 0; i < renderers.Length; i++)
                 if (renderers[i].bounds.Contains(world)) return true;
             return false;
@@ -945,6 +1043,15 @@ namespace BallGame.LevelDesign
 
         private static CollaborativeSplineHandle FindSplineHandle(Collider2D[] hits)
         {
+            // Simulation waypoints have their own editing semantics. Prefer them
+            // when their hit area overlaps a spline control point.
+            for (int i = 0; i < hits.Length; i++)
+            {
+                CollaborativeSplineHandle handle = hits[i] != null
+                    ? hits[i].GetComponent<CollaborativeSplineHandle>()
+                    : null;
+                if (handle != null && handle.IsSimulationWaypoint) return handle;
+            }
             for (int i = 0; i < hits.Length; i++)
             {
                 CollaborativeSplineHandle handle = hits[i].GetComponent<CollaborativeSplineHandle>();
@@ -1031,10 +1138,14 @@ namespace BallGame.LevelDesign
             if (!simulating)
             {
                 editSnapshot = CaptureDocument().ToJson();
+                Select(null);
                 simulating = true;
                 EnsureSimulationVisualBootstrap();
-                foreach (Rigidbody2D body in worldRoot.GetComponentsInChildren<Rigidbody2D>(true)) body.simulated = true;
-                foreach (BallController ball in worldRoot.GetComponentsInChildren<BallController>(true)) ball.Launch();
+                RestoreEditorPhysicsForSimulation();
+                foreach (BallController ball in worldRoot.GetComponentsInChildren<BallController>(true))
+                {
+                    ball.Launch();
+                }
                 ApplyAllPortalPairs();
                 SetSimulationPreview(true);
                 SetHierarchyInteractable(false);
@@ -1042,14 +1153,23 @@ namespace BallGame.LevelDesign
             }
             else
             {
-                SetSimulationPreview(false);
                 simulating = false;
-                DestroyOwnedSimulationVisualBootstrap();
-                LoadDocument(CollaborativeLevelDocument.FromJson(editSnapshot));
-                undo.Clear();
-                redo.Clear();
+                RestoreSimulationSnapshot();
+                SetHierarchyInteractable(true);
                 SetStatus("Edit state restored.");
             }
+        }
+
+        private void RestoreSimulationSnapshot()
+        {
+            SetSimulationPreview(false);
+            DestroyOwnedSimulationVisualBootstrap();
+            if (string.IsNullOrWhiteSpace(editSnapshot)) return;
+            LoadDocument(CollaborativeLevelDocument.FromJson(editSnapshot));
+            Physics2D.SyncTransforms();
+            undo.Clear();
+            redo.Clear();
+            editSnapshot = null;
         }
 
         private void EnsureSimulationVisualBootstrap()
@@ -1057,6 +1177,7 @@ namespace BallGame.LevelDesign
             simulationVisualBootstrap = FindObjectOfType<LevelTestVisual3DBootstrap>();
             ownsSimulationVisualBootstrap = false;
             if (simulationVisualBootstrap != null) return;
+            if (worldRoot.GetComponentInChildren<BallController>(true) == null) return;
 
             GameObject bootstrapObject = new GameObject("LevelDesigner Visual Stage Transition");
             simulationVisualBootstrap = bootstrapObject.AddComponent<LevelTestVisual3DBootstrap>();
@@ -1101,7 +1222,7 @@ namespace BallGame.LevelDesign
 
         private CollaborativeLevelDocument CaptureDocument()
         {
-            document.formatVersion = 4;
+            document.formatVersion = 5;
             document.objects.Clear();
             CollaborativeLevelObject[] objects = worldRoot.GetComponentsInChildren<CollaborativeLevelObject>(true);
             UpdateCanvasBounds(objects);
@@ -1162,7 +1283,16 @@ namespace BallGame.LevelDesign
         {
             CloseLevelSettings();
             ClearHierarchyItems();
-            for (int i = worldRoot.childCount - 1; i >= 0; i--) Destroy(worldRoot.GetChild(i).gameObject);
+            // Disable old instances before delayed destruction. This prevents a moved
+            // preview object from remaining visible for the rest of the frame while
+            // the restored document instances are being created.
+            for (int i = worldRoot.childCount - 1; i >= 0; i--)
+            {
+                GameObject oldInstance = worldRoot.GetChild(i).gameObject;
+                oldInstance.SetActive(false);
+                Destroy(oldInstance);
+            }
+            editorBodySimulation.Clear();
             document = source;
             if (titleInput != null) titleInput.SetTextWithoutNotify(document.title);
             if (authorInput != null) authorInput.SetTextWithoutNotify(document.author);
@@ -1179,16 +1309,68 @@ namespace BallGame.LevelDesign
                 ApplyRecordSize(instance, record);
                 CollaborativeLevelObject marker = instance.AddComponent<CollaborativeLevelObject>();
                 marker.Initialize(record);
+                ApplySimulationMover(record, instance, marker);
                 if (record.assetKey == "portal") ApplyPortalPair(instance, marker.Properties);
                 if (record.kind == CollaborativeObjectKind.SplineTool)
                     ApplySpline(marker);
                 ApplyTrackIntersection(marker);
-                SetPhysics(instance, false);
+                CaptureEditorPhysics(instance);
                 loadedObjects.Add(marker);
                 nextObjectId++;
             }
             Select(null);
             RebuildHierarchy(loadedObjects);
+            Physics2D.SyncTransforms();
+        }
+
+        private static void ApplySimulationMover(CollaborativeObjectRecord record, GameObject instance, CollaborativeLevelObject marker)
+        {
+            SimulationMover2D mover = instance.GetComponent<SimulationMover2D>();
+            bool attached = record == null ? mover != null : record.simulationMoverAttached;
+            if (!attached)
+            {
+                if (mover != null)
+                {
+                    bool removeBody = mover.EditorOwnsRigidbody;
+                    Rigidbody2D body = instance.GetComponent<Rigidbody2D>();
+                    if (Application.isPlaying) UnityEngine.Object.Destroy(mover); else UnityEngine.Object.DestroyImmediate(mover);
+                    if (removeBody && body != null)
+                    {
+                        if (Application.isPlaying) UnityEngine.Object.Destroy(body); else UnityEngine.Object.DestroyImmediate(body);
+                    }
+                }
+                if (marker != null) marker.SetSimulationMoverAttached(false);
+                return;
+            }
+            if (mover == null)
+            {
+                bool hadBody = instance.GetComponent<Rigidbody2D>() != null;
+                mover = instance.AddComponent<SimulationMover2D>();
+                if (!hadBody)
+                {
+                    Rigidbody2D createdBody = instance.GetComponent<Rigidbody2D>();
+                    createdBody.bodyType = RigidbodyType2D.Kinematic;
+                    createdBody.gravityScale = 0f;
+                    createdBody.simulated = false;
+                    mover.SetEditorRigidbodyOwnership(true);
+                }
+            }
+            if (marker != null) marker.SetSimulationMoverAttached(true);
+            if (record == null)
+            {
+                mover.CaptureWaypointsFromChildren();
+                return;
+            }
+            mover.MoveEnabled = record.simulationMoveEnabled;
+            mover.MoveSpeed = record.simulationMoveSpeed;
+            mover.PingPong = record.simulationPingPong;
+            mover.ClosedPath = record.simulationClosedPath;
+            mover.RotateEnabled = record.simulationRotateEnabled;
+            mover.AngularSpeed = record.simulationAngularSpeed;
+            if (record.simulationWaypoints != null && record.simulationWaypoints.Count > 0)
+                mover.SetWaypointLocalPositions(record.simulationWaypoints);
+            else
+                mover.CaptureWaypointsFromChildren();
         }
 
         private void PushUndo()
@@ -1222,7 +1404,19 @@ namespace BallGame.LevelDesign
 
         private void Select(CollaborativeLevelObject marker)
         {
+            CommitSimulationMoverPanel();
+            placingSimulationWaypoint = false;
+            draggingSimulationWaypoint = false;
             RestoreSelectionOpacity();
+            if (selected != null)
+            {
+                Rigidbody2D previousBody = selected.GetComponent<Rigidbody2D>();
+                if (previousBody != null && previousBody.simulated)
+                {
+                    if (!editorBodySimulation.ContainsKey(previousBody)) editorBodySimulation[previousBody] = true;
+                    previousBody.simulated = false;
+                }
+            }
             if (marker != selected && marker != null && marker.GetComponent<TrackIntersectionEditable2D>() != null && trackPartDropdown != null)
                 trackPartDropdown.SetValueWithoutNotify(0);
             selected = marker;
@@ -1230,6 +1424,24 @@ namespace BallGame.LevelDesign
             RefreshSelection();
             RebuildSplineHandles();
             RefreshHierarchySelection();
+        }
+
+        private void CommitSimulationMoverPanel()
+        {
+            if (selected == null || simulating || simulationMoverPanel == null || !simulationMoverPanel.activeSelf)
+                return;
+            SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+            if (mover == null || !selected.SimulationMoverAttached || simulationMoveToggle == null) return;
+            bool changed = mover.MoveEnabled != simulationMoveToggle.isOn
+                || mover.PingPong != simulationPingPongToggle.isOn
+                || mover.ClosedPath != simulationClosedPathToggle.isOn
+                || mover.RotateEnabled != simulationRotateToggle.isOn;
+            if (!changed) return;
+            PushUndo();
+            mover.MoveEnabled = simulationMoveToggle.isOn;
+            mover.PingPong = simulationPingPongToggle.isOn;
+            mover.ClosedPath = simulationClosedPathToggle.isOn;
+            mover.RotateEnabled = simulationRotateToggle.isOn;
         }
 
         private void ApplySelectionOpacity()
@@ -1319,6 +1531,21 @@ namespace BallGame.LevelDesign
                     CreateTrackHandle(splineTransform.TransformPoint(curve.points[i].position), new Color(1f, 0.72f, 0.18f, 1f), i, upper, false);
                 return;
             }
+            SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+            if (mover != null && selected.SimulationMoverAttached)
+            {
+                for (int i = 0; i < mover.WaypointCount; i++)
+                {
+                    GameObject handle = new GameObject("Waypoint " + i, typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(CollaborativeSplineHandle));
+                    handle.transform.SetParent(splineHandleRoot, false);
+                    handle.transform.position = mover.GetWaypointWorldPosition(i);
+                    handle.transform.localScale = Vector3.one * 0.34f;
+                    SpriteRenderer renderer = handle.GetComponent<SpriteRenderer>();
+                    renderer.sprite = GetHandleSprite(); renderer.color = new Color(0.25f, 0.9f, 0.35f, 1f); renderer.sortingOrder = 1001;
+                    handle.GetComponent<CircleCollider2D>().radius = 0.6f;
+                    handle.GetComponent<CollaborativeSplineHandle>().InitializeSimulationWaypoint(selected, i);
+                }
+            }
             if (selected.AssetKey == "obstacle" && SizeEditable2DUtility.TryGet(selected.gameObject, out ISizeEditable2D obstacleSize))
             {
                 CreateObstacleSizeHandle(-1, obstacleSize.Size.x);
@@ -1402,6 +1629,12 @@ namespace BallGame.LevelDesign
                             handle.transform.position = track.GetSpline(handle.Upper).transform.TransformPoint(curve.points[handle.PointIndex].position);
                     }
                 }
+                else if (handle.IsSimulationWaypoint)
+                {
+                    SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+                    if (mover != null && selected.SimulationMoverAttached && handle.PointIndex >= 0 && handle.PointIndex < mover.WaypointCount)
+                        handle.transform.position = mover.GetWaypointWorldPosition(handle.PointIndex);
+                }
                 else if (handle.PointIndex >= 0 && handle.PointIndex < selected.SplinePoints.Count)
                     handle.transform.position = selected.transform.TransformPoint(selected.SplinePoints[handle.PointIndex].position);
             }
@@ -1449,6 +1682,301 @@ namespace BallGame.LevelDesign
 
         private static Sprite handleSprite;
 
+        private void CreateSimulationMoverPanel(Transform inspector)
+        {
+            if (simulationMoverPanel != null) return;
+            Transform existing = inspector.Find("SimulationMoverPanel");
+            simulationMoverPanel = existing != null ? existing.gameObject : new GameObject("SimulationMoverPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            if (existing == null) simulationMoverPanel.transform.SetParent(inspector, false);
+            RectTransform panelRect = simulationMoverPanel.GetComponent<RectTransform>();
+            if (panelRect == null) panelRect = simulationMoverPanel.AddComponent<RectTransform>();
+            if (simulationMoverPanel.GetComponent<Image>() == null) simulationMoverPanel.AddComponent<Image>();
+            if (existing == null)
+            {
+                panelRect.anchorMin = panelRect.anchorMax = new Vector2(0f, 1f);
+                panelRect.pivot = new Vector2(0f, 1f);
+                panelRect.anchoredPosition = new Vector2(8f, -595f);
+                panelRect.sizeDelta = new Vector2(414f, 470f);
+            }
+            simulationMoverPanel.GetComponent<Image>().color = new Color(0.86f, 0.88f, 0.90f, 0.96f);
+            GetOrCreateLabel(panelRect, "Title", "SIMULATION MOVER", new Vector2(207f, -22f), 18f, TextAlignmentOptions.Center);
+            simulationMoverAttachedToggle = GetOrCreateToggle(panelRect, "Simulation Mover", new Vector2(207f, -58f), ApplySimulationAttachmentToggle);
+            simulationMoveToggle = GetOrCreateToggle(panelRect, "Move Enabled", new Vector2(102f, -98f), ApplyMoveEnabledToggle);
+            simulationPingPongToggle = GetOrCreateToggle(panelRect, "Ping Pong", new Vector2(312f, -98f), ApplyPingPongToggle);
+            simulationClosedPathToggle = GetOrCreateToggle(panelRect, "Closed Path", new Vector2(102f, -138f), ApplyClosedPathToggle);
+            simulationRotateToggle = GetOrCreateToggle(panelRect, "Rotate", new Vector2(312f, -138f), ApplyRotateToggle);
+            simulationMoveSpeedInput = GetOrCreateInput(panelRect, "Move Speed", new Vector2(102f, -186f), _ => ApplySimulationMoverSettings());
+            simulationAngularSpeedInput = GetOrCreateInput(panelRect, "Angular Speed", new Vector2(312f, -186f), _ => ApplySimulationMoverSettings());
+            simulationWaypointTitle = GetOrCreateLabel(panelRect, "Waypoints", "WAYPOINTS", new Vector2(207f, -222f), 16f, TextAlignmentOptions.Center);
+            simulationWaypointDropdown = GetOrCreateDropdown(panelRect, "Waypoint", new Vector2(207f, -280f), new Vector2(380f, 40f), new[] { "No waypoints" });
+            simulationWaypointDropdown.onValueChanged.AddListener(index => { selectedWaypointIndex = index; RefreshSimulationMoverPanel(); });
+            Button addButton = GetOrCreateButton(panelRect, "Add Waypoint", new Vector2(102f, -332f), AddSimulationWaypoint);
+            simulationAddWaypointButton = addButton;
+            simulationRemoveWaypointButton = GetOrCreateButton(panelRect, "Remove Waypoint", new Vector2(312f, -332f), RemoveSimulationWaypoint);
+            SetControlWidth(addButton, 190f); SetControlWidth(simulationRemoveWaypointButton, 190f);
+            simulationWaypointXInput = GetOrCreateInput(panelRect, "Waypoint X", new Vector2(102f, -436f), _ => ApplySimulationWaypointPosition());
+            simulationWaypointYInput = GetOrCreateInput(panelRect, "Waypoint Y", new Vector2(312f, -436f), _ => ApplySimulationWaypointPosition());
+            // Legacy prefabs may still contain the removed sorting controls.
+            Transform legacyUp = panelRect.Find("UpButton");
+            Transform legacyDown = panelRect.Find("DownButton");
+            if (legacyUp != null) legacyUp.gameObject.SetActive(false);
+            if (legacyDown != null) legacyDown.gameObject.SetActive(false);
+            simulationMoverPanel.SetActive(false);
+        }
+
+        private static Toggle AddToggle(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction<bool> changed)
+        {
+            GameObject root = new GameObject(label + "Toggle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Toggle));
+            root.transform.SetParent(parent, false);
+            RectTransform rect = root.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = GetChildAnchor(parent); rect.pivot = new Vector2(0.5f, 0.5f); rect.anchoredPosition = position; rect.sizeDelta = new Vector2(190f, 34f);
+            Image image = root.GetComponent<Image>(); image.color = new Color(0.16f, 0.18f, 0.2f, 1f);
+            Toggle toggle = root.GetComponent<Toggle>(); toggle.targetGraphic = image; toggle.onValueChanged.AddListener(changed);
+            EnsureToggleGraphic(toggle);
+            TMP_Text text = AddText(root.transform, "Label", new Vector2(8f, 0f), new Vector2(115f, 28f), 13f, TextAlignmentOptions.MidlineLeft); text.text = label;
+            return toggle;
+        }
+
+        private static TMP_Text GetOrCreateLabel(Transform parent, string name, string value, Vector2 position, float size, TextAlignmentOptions alignment)
+        {
+            TMP_Text existing = parent.Find(name)?.GetComponent<TMP_Text>();
+            // A label already authored in DesignerUI.prefab owns its text and layout.
+            if (existing != null) return existing;
+            TMP_Text label = AddText(parent, name, position, new Vector2(380f, 30f), size, alignment); label.text = value; label.color = new Color(0.12f, 0.14f, 0.16f, 1f); return label;
+        }
+
+        private static Toggle GetOrCreateToggle(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction<bool> changed)
+        {
+            Toggle existing = parent.Find(label + "Toggle")?.GetComponent<Toggle>();
+            if (existing != null) { existing.onValueChanged.RemoveAllListeners(); existing.onValueChanged.AddListener(changed); EnsureToggleGraphic(existing); return existing; }
+            return AddToggle(parent, label, position, changed);
+        }
+
+        private static void EnsureToggleGraphic(Toggle toggle)
+        {
+            if (toggle == null || toggle.graphic != null) return;
+            Transform checkmark = toggle.transform.Find("Checkmark");
+            GameObject checkObject = checkmark != null ? checkmark.gameObject : new GameObject("Checkmark", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            if (checkmark == null) checkObject.transform.SetParent(toggle.transform, false);
+            RectTransform rect = checkObject.GetComponent<RectTransform>(); rect.anchorMin = new Vector2(0f, 0.5f); rect.anchorMax = new Vector2(0f, 0.5f); rect.pivot = new Vector2(0.5f, 0.5f); rect.anchoredPosition = new Vector2(18f, 0f); rect.sizeDelta = new Vector2(16f, 16f);
+            Image image = checkObject.GetComponent<Image>(); image.color = new Color(0.25f, 0.9f, 0.35f, 1f); image.raycastTarget = false;
+            image.sprite = Resources.GetBuiltinResource<Sprite>("UI/Skin/Checkmark.psd");
+            toggle.graphic = image;
+            toggle.toggleTransition = Toggle.ToggleTransition.Fade;
+        }
+
+        private static TMP_InputField GetOrCreateInput(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction<string> submitted)
+        {
+            TMP_InputField existing = parent.Find(label + "Input")?.GetComponent<TMP_InputField>();
+            if (existing != null) { existing.onEndEdit.RemoveAllListeners(); existing.onEndEdit.AddListener(submitted); return existing; }
+            return AddInput(parent, label, position, submitted);
+        }
+
+        private static TMP_Dropdown GetOrCreateDropdown(Transform parent, string name, Vector2 position, Vector2 size, string[] options)
+        {
+            TMP_Dropdown existing = parent.Find(name + "Dropdown")?.GetComponent<TMP_Dropdown>();
+            if (existing != null) return existing;
+            return AddDropdown(parent, name, position, size, options);
+        }
+
+        private static Button GetOrCreateButton(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction action)
+        {
+            Button existing = parent.Find(label + "Button")?.GetComponent<Button>();
+            if (existing != null) { existing.onClick.RemoveAllListeners(); existing.onClick.AddListener(action); return existing; }
+            return AddButton(parent, label, position, action);
+        }
+
+        private static void SetControlWidth(Component control, float width)
+        {
+            if (control != null && control.transform is RectTransform rect) rect.sizeDelta = new Vector2(width, rect.sizeDelta.y);
+        }
+
+        private void RefreshSimulationMoverPanel()
+        {
+            SimulationMover2D mover = selected != null ? selected.GetComponent<SimulationMover2D>() : null;
+            bool visible = selected != null;
+            if (simulationMoverPanel != null) simulationMoverPanel.SetActive(visible);
+            if (!visible) return;
+
+            bool attached = mover != null && selected.SimulationMoverAttached;
+            RectTransform panelRect = simulationMoverPanel != null ? simulationMoverPanel.GetComponent<RectTransform>() : null;
+            if (panelRect != null) panelRect.sizeDelta = new Vector2(panelRect.sizeDelta.x, attached ? 415f : 82f);
+            simulationMoverAttachedToggle.SetIsOnWithoutNotify(attached);
+            simulationMoverAttachedToggle.interactable = !simulating;
+            SetSimulationMoverControlsVisible(attached);
+            if (attached && mover != null)
+            {
+                simulationMoveToggle.SetIsOnWithoutNotify(mover.MoveEnabled);
+                simulationPingPongToggle.SetIsOnWithoutNotify(mover.PingPong);
+                simulationClosedPathToggle.SetIsOnWithoutNotify(mover.ClosedPath);
+                simulationRotateToggle.SetIsOnWithoutNotify(mover.RotateEnabled);
+                SetInput(simulationMoveSpeedInput, mover.MoveSpeed, !simulating);
+                SetInput(simulationAngularSpeedInput, mover.AngularSpeed, !simulating);
+                RefreshSimulationWaypointList(mover);
+            }
+            else
+            {
+                simulationWaypointDropdown.options.Clear();
+                simulationWaypointDropdown.options.Add(new TMP_Dropdown.OptionData("No waypoints"));
+                simulationWaypointDropdown.SetValueWithoutNotify(0);
+                simulationWaypointDropdown.interactable = false;
+                SetInput(simulationMoveSpeedInput, 1f, false);
+                SetInput(simulationAngularSpeedInput, 0f, false);
+                simulationRemoveWaypointButton.interactable = false;
+            }
+        }
+
+        private void SetSimulationMoverControlsVisible(bool visible)
+        {
+            SetControlActive(simulationMoveToggle, visible);
+            SetControlActive(simulationPingPongToggle, visible);
+            SetControlActive(simulationClosedPathToggle, visible);
+            SetControlActive(simulationRotateToggle, visible);
+            SetControlActive(simulationWaypointTitle, visible);
+            SetControlActive(simulationMoveSpeedInput, visible);
+            SetControlActive(simulationAngularSpeedInput, visible);
+            SetControlActive(simulationWaypointDropdown, visible);
+            SetControlActive(simulationWaypointXInput, visible);
+            SetControlActive(simulationWaypointYInput, visible);
+            SetControlActive(simulationRemoveWaypointButton, visible);
+            SetControlActive(simulationAddWaypointButton, visible);
+            if (simulationMoveToggle != null) simulationMoveToggle.interactable = visible && !simulating;
+            if (simulationPingPongToggle != null) simulationPingPongToggle.interactable = visible && !simulating;
+            if (simulationClosedPathToggle != null) simulationClosedPathToggle.interactable = visible && !simulating;
+            if (simulationRotateToggle != null) simulationRotateToggle.interactable = visible && !simulating;
+        }
+
+        private static void SetControlActive(Component control, bool active)
+        {
+            if (control != null) control.gameObject.SetActive(active);
+        }
+
+        private void RefreshSimulationWaypointList(SimulationMover2D mover)
+        {
+            int count = mover != null ? mover.WaypointCount : 0;
+            if (count == 0) { selectedWaypointIndex = -1; simulationWaypointDropdown.options.Clear(); simulationWaypointDropdown.options.Add(new TMP_Dropdown.OptionData("No waypoints")); simulationWaypointDropdown.SetValueWithoutNotify(0); simulationWaypointDropdown.interactable = false; }
+            else
+            {
+                selectedWaypointIndex = Mathf.Clamp(selectedWaypointIndex < 0 ? 0 : selectedWaypointIndex, 0, count - 1);
+                simulationWaypointDropdown.options.Clear();
+                for (int i = 0; i < count; i++) simulationWaypointDropdown.options.Add(new TMP_Dropdown.OptionData("Waypoint " + i));
+                simulationWaypointDropdown.interactable = !simulating; simulationWaypointDropdown.SetValueWithoutNotify(selectedWaypointIndex); simulationWaypointDropdown.RefreshShownValue();
+                Vector2 point = mover.GetWaypointLocalPosition(selectedWaypointIndex);
+                SetInput(simulationWaypointXInput, point.x, !simulating);
+                SetInput(simulationWaypointYInput, point.y, !simulating);
+            }
+            bool has = mover != null && count > 0 && !simulating;
+            simulationRemoveWaypointButton.interactable = has;
+        }
+
+        private void ApplySimulationMoverSettings()
+        {
+            if (selected == null || simulating) return;
+            SimulationMover2D mover = selected.GetComponent<SimulationMover2D>(); if (mover == null || !selected.SimulationMoverAttached) return;
+            bool hasSpeed = TryRead(simulationMoveSpeedInput, out float speed) && speed >= 0f;
+            bool hasAngularSpeed = TryRead(simulationAngularSpeedInput, out float angular);
+            PushUndo();
+            mover.MoveEnabled = simulationMoveToggle.isOn;
+            mover.PingPong = simulationPingPongToggle.isOn;
+            mover.ClosedPath = simulationClosedPathToggle.isOn;
+            mover.RotateEnabled = simulationRotateToggle.isOn;
+            if (hasSpeed) mover.MoveSpeed = speed;
+            if (hasAngularSpeed) mover.AngularSpeed = angular;
+            RefreshSimulationMoverPanel();
+        }
+
+        private void ApplyMoveEnabledToggle(bool value) => ApplyMoverToggle(value, (mover, v) => mover.MoveEnabled = v);
+        private void ApplyPingPongToggle(bool value) => ApplyMoverToggle(value, (mover, v) => mover.PingPong = v);
+        private void ApplyClosedPathToggle(bool value) => ApplyMoverToggle(value, (mover, v) => mover.ClosedPath = v);
+        private void ApplyRotateToggle(bool value) => ApplyMoverToggle(value, (mover, v) => mover.RotateEnabled = v);
+
+        private void ApplySimulationAttachmentToggle(bool value)
+        {
+            if (selected == null || simulating) return;
+            bool attached = selected.GetComponent<SimulationMover2D>() != null && selected.SimulationMoverAttached;
+            if (attached == value) return;
+            PushUndo();
+            if (value)
+            {
+                SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+                if (mover == null)
+                {
+                    bool hadBody = selected.GetComponent<Rigidbody2D>() != null;
+                    mover = selected.gameObject.AddComponent<SimulationMover2D>();
+                    if (!hadBody)
+                    {
+                        Rigidbody2D body = selected.GetComponent<Rigidbody2D>();
+                        body.bodyType = RigidbodyType2D.Kinematic;
+                        body.gravityScale = 0f;
+                        body.simulated = false;
+                        mover.SetEditorRigidbodyOwnership(true);
+                    }
+                    else
+                    {
+                        mover.SetEditorRigidbodyOwnership(false);
+                    }
+                    Rigidbody2D attachedBody = selected.GetComponent<Rigidbody2D>();
+                    if (attachedBody != null)
+                    {
+                        if (!editorBodySimulation.ContainsKey(attachedBody)) editorBodySimulation[attachedBody] = attachedBody.simulated;
+                        attachedBody.simulated = false;
+                    }
+                    mover.CaptureWaypointsFromChildren();
+                }
+                selected.SetSimulationMoverAttached(true);
+            }
+            else
+            {
+                SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+                if (mover != null)
+                {
+                    bool removeBody = mover.EditorOwnsRigidbody;
+                    Rigidbody2D body = selected.GetComponent<Rigidbody2D>();
+                    Destroy(mover);
+                    if (removeBody && body != null)
+                    {
+                        editorBodySimulation.Remove(body);
+                        Destroy(body);
+                    }
+                }
+                selected.SetSimulationMoverAttached(false);
+                selectedWaypointIndex = -1;
+                placingSimulationWaypoint = false;
+            }
+            RefreshSelection();
+            RebuildSplineHandles();
+            SetStatus(value ? "Simulation Mover attached." : "Simulation Mover detached.");
+        }
+
+        private void ApplyMoverToggle(bool value, System.Action<SimulationMover2D, bool> setter)
+        {
+            if (selected == null || simulating) return;
+            SimulationMover2D mover = selected.GetComponent<SimulationMover2D>();
+            if (mover == null || !selected.SimulationMoverAttached) return;
+            PushUndo();
+            setter(mover, value);
+        }
+
+        private void AddSimulationWaypoint()
+        {
+            if (selected == null || simulating || selected.GetComponent<SimulationMover2D>() == null || !selected.SimulationMoverAttached) return;
+            placingSimulationWaypoint = true;
+            SetStatus("Click in the scene to place a waypoint. Click Test or select another object to cancel.");
+        }
+
+        private void RemoveSimulationWaypoint()
+        {
+            if (selected == null || simulating) return; SimulationMover2D mover = selected.GetComponent<SimulationMover2D>(); if (mover == null || !selected.SimulationMoverAttached || selectedWaypointIndex < 0) return;
+            PushUndo(); mover.RemoveWaypoint(selectedWaypointIndex); selectedWaypointIndex = Mathf.Min(selectedWaypointIndex, mover.WaypointCount - 1); RefreshSimulationMoverPanel();
+            RebuildSplineHandles();
+        }
+
+        private void ApplySimulationWaypointPosition()
+        {
+            if (selected == null || simulating || selectedWaypointIndex < 0) return; SimulationMover2D mover = selected.GetComponent<SimulationMover2D>(); if (mover == null || !selected.SimulationMoverAttached || !TryRead(simulationWaypointXInput, out float x) || !TryRead(simulationWaypointYInput, out float y)) return;
+            PushUndo(); mover.SetWaypointLocalPosition(selectedWaypointIndex, new Vector2(x, y)); RefreshSimulationMoverPanel();
+            UpdateSplineHandlePositions();
+        }
+
         private void RefreshSelection()
         {
             bool hasSelection = selected != null;
@@ -1478,6 +2006,17 @@ namespace BallGame.LevelDesign
             SetInput(trackEntryXInput, trackEntrySelected ? track.GetEntryLocalPosition(upper).x : 0f, trackEntrySelected);
             SetInput(trackEntryYInput, trackEntrySelected ? track.GetEntryLocalPosition(upper).y : 0f, trackEntrySelected);
             SetInput(trackEntryRotationInput, trackEntrySelected ? track.GetEntryLocalRotation(upper) : 0f, trackEntrySelected);
+            bool simulationSelected = hasSelection && selected.SimulationMoverAttached;
+            SetInspectorControlVisible(trackPartDropdown, !simulationSelected);
+            SetInspectorControlVisible(trackEntryXInput, !simulationSelected);
+            SetInspectorControlVisible(trackEntryYInput, !simulationSelected);
+            SetInspectorControlVisible(trackEntryRotationInput, !simulationSelected);
+            RefreshSimulationMoverPanel();
+        }
+
+        private static void SetInspectorControlVisible(Component component, bool visible)
+        {
+            if (component != null) component.gameObject.SetActive(visible);
         }
 
         private void ApplyInspectorTransform()
@@ -1574,10 +2113,32 @@ namespace BallGame.LevelDesign
                 && !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
-        private static void SetPhysics(GameObject target, bool simulated)
+        private void CaptureEditorPhysics(GameObject target)
         {
             Rigidbody2D[] bodies = target.GetComponentsInChildren<Rigidbody2D>(true);
-            for (int i = 0; i < bodies.Length; i++) bodies[i].simulated = simulated;
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                Rigidbody2D body = bodies[i];
+                if (body == null) continue;
+                editorBodySimulation[body] = body.simulated;
+                body.simulated = false;
+            }
+        }
+
+        private void RestoreEditorPhysicsForSimulation()
+        {
+            List<Rigidbody2D> stale = null;
+            foreach (KeyValuePair<Rigidbody2D, bool> pair in editorBodySimulation)
+            {
+                if (pair.Key != null) pair.Key.simulated = pair.Value;
+                else
+                {
+                    if (stale == null) stale = new List<Rigidbody2D>();
+                    stale.Add(pair.Key);
+                }
+            }
+            if (stale == null) return;
+            for (int i = 0; i < stale.Count; i++) editorBodySimulation.Remove(stale[i]);
         }
 
         private Vector2 ScreenToWorld(Vector2 screen)

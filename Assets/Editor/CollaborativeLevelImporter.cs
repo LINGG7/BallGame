@@ -125,6 +125,7 @@ namespace BallGame.Editor
                     CollaborativeTrackIntersectionData data = record.trackIntersection ?? trackIntersection.CaptureData();
                     trackIntersection.Apply(data);
                 }
+                ApplySimulationMover(instance, record);
                 if (record.assetKey == "portal") ApplyPortalPair(instance, record);
             }
 
@@ -228,6 +229,35 @@ namespace BallGame.Editor
                     return;
                 }
             }
+        }
+
+        private static void ApplySimulationMover(GameObject instance, CollaborativeObjectRecord record)
+        {
+            if (instance == null || record == null || !record.simulationMoverAttached) return;
+            SimulationMover2D mover = instance.GetComponent<SimulationMover2D>();
+            if (mover == null)
+            {
+                bool hadBody = instance.GetComponent<Rigidbody2D>() != null;
+                mover = instance.AddComponent<SimulationMover2D>();
+                if (!hadBody)
+                {
+                    Rigidbody2D body = instance.GetComponent<Rigidbody2D>();
+                    body.bodyType = RigidbodyType2D.Kinematic;
+                    body.gravityScale = 0f;
+                    body.simulated = true;
+                    mover.SetEditorRigidbodyOwnership(false);
+                }
+            }
+            mover.MoveEnabled = record.simulationMoveEnabled;
+            mover.MoveSpeed = record.simulationMoveSpeed;
+            mover.PingPong = record.simulationPingPong;
+            mover.ClosedPath = record.simulationClosedPath;
+            mover.RotateEnabled = record.simulationRotateEnabled;
+            mover.AngularSpeed = record.simulationAngularSpeed;
+            if (record.simulationWaypoints != null && record.simulationWaypoints.Count > 0)
+                mover.SetWaypointLocalPositions(record.simulationWaypoints);
+            else
+                mover.CaptureWaypointsFromChildren();
         }
 
         private static void ApplyMapBounds(Scene scene, CollaborativeLevelDocument document)

@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
@@ -59,7 +61,7 @@ namespace BallGame.LevelDesign
             float top = Mathf.Clamp01(1f - topRight.y / Screen.height);
             float width = Mathf.Clamp01((topRight.x - bottomLeft.x) / Screen.width);
             float height = Mathf.Clamp01((topRight.y - bottomLeft.y) / Screen.height);
-            WebGLInput.captureAllKeyboardInput = false;
+            SetUnityKeyboardCapture(false);
             BallGameOpenTextInput(
                 receiverName,
                 changedMethod,
@@ -76,9 +78,20 @@ namespace BallGame.LevelDesign
         public static void RestoreUnityKeyboardCapture()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            WebGLInput.captureAllKeyboardInput = true;
+            SetUnityKeyboardCapture(true);
 #endif
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        private static void SetUnityKeyboardCapture(bool capture)
+        {
+            Type webGlInputType = Type.GetType("UnityEngine.WebGLInput, UnityEngine.WebGLModule");
+            PropertyInfo property = webGlInputType?.GetProperty(
+                "captureAllKeyboardInput",
+                BindingFlags.Public | BindingFlags.Static);
+            property?.SetValue(null, capture, null);
+        }
+#endif
 
         private void OnDisable()
         {
