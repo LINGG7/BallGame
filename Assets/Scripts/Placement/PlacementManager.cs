@@ -9,6 +9,22 @@ namespace BallGame.Placement
 {
     public sealed class PlacementManager : MonoBehaviour
     {
+        private const int HistoryCapacity = 50;
+
+        private sealed class PlacedToolState
+        {
+            public ToolDefinition definition;
+            public Vector3 position;
+            public Quaternion rotation;
+            public int portalPairId = -1;
+        }
+
+        private sealed class PlacementState
+        {
+            public readonly List<PlacedToolState> tools = new List<PlacedToolState>();
+            public readonly Dictionary<ToolDefinition, int> remaining = new Dictionary<ToolDefinition, int>();
+        }
+
         [SerializeField] private Camera worldCamera;
         [SerializeField] private Transform placedRoot;
         [SerializeField] private LayerMask blockedPlacementMask;
@@ -19,6 +35,8 @@ namespace BallGame.Placement
         private readonly List<PlaceableTool> placedTools = new List<PlaceableTool>();
         private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
         private readonly Collider2D[] placementHits = new Collider2D[32];
+        private readonly Stack<PlacementState> undoHistory = new Stack<PlacementState>();
+        private readonly Stack<PlacementState> redoHistory = new Stack<PlacementState>();
         private ContactFilter2D placementFilter;
 
         private ToolDefinition activeDefinition;
@@ -27,6 +45,7 @@ namespace BallGame.Placement
         private PlaceableTool draggedPlacedTool;
         private Vector3 draggedOriginalPosition;
         private Vector2 draggedPointerOffset;
+        private PlacementState draggedOriginalState;
         private Vector2 pointerDownScreenPosition;
         private bool isSimulating;
         private bool interactionEnabled = true;
@@ -36,9 +55,12 @@ namespace BallGame.Placement
 
         public event System.Action InventoryChanged;
         public event System.Action CostChanged;
+        public event System.Action HistoryChanged;
 
         public bool HasUnlimitedSupply => unlimitedSupply;
         public int CurrentCost { get; private set; }
+        public bool CanUndo => interactionEnabled && !isSimulating && undoHistory.Count > 0;
+        public bool CanRedo => interactionEnabled && !isSimulating && redoHistory.Count > 0;
 
         public int GetRemaining(ToolDefinition definition)
         {
@@ -85,6 +107,7 @@ namespace BallGame.Placement
         public void ResetForLevel(LevelDefinition level)
         {
             ClearPlacedTools();
+            ClearHistory();
             remaining.Clear();
             availableTools.Clear();
             unlimitedSupply = level != null && level.Mode == LevelMode.LowestCost;
@@ -202,8 +225,13 @@ namespace BallGame.Placement
 
             Vector3 originalPosition = selected.transform.position;
             Quaternion originalRotation = selected.transform.rotation;
+            PlacementState originalState = CaptureState();
             selected.Rotate(selected.Definition.RotationStep * Mathf.Sign(direction));
-            TryCommitSelectedTransform(originalPosition, originalRotation);
+            if (TryCommitSelectedTransform(originalPosition, originalRotation)
+                && selected.transform.rotation != originalRotation)
+            {
+                RecordOperation(originalState);
+            }
         }
 
         public void DeleteSelected()
@@ -214,8 +242,9 @@ namespace BallGame.Placement
             }
 
             ToolDefinition definition = selected.Definition;
+            PlacementState originalState = CaptureState();
             placedTools.Remove(selected);
-            Destroy(selected.gameObject);
+            DestroyPlacedInstance(selected.gameObject);
             selected = null;
             if (!unlimitedSupply)
             {
@@ -224,11 +253,12 @@ namespace BallGame.Placement
 
             RecalculateCurrentCost();
             InventoryChanged?.Invoke();
+            RecordOperation(originalState);
         }
 
         public void ClearAllPlacedTools()
         {
-            if (isSimulating || !interactionEnabled)
+            if (isSimulating || !interactionEnabled || placedTools.Count == 0)
             {
                 return;
             }
@@ -236,6 +266,7 @@ namespace BallGame.Placement
             ClearPreview();
             EndPlacedToolDrag(false);
             Select(null);
+            PlacementState originalState = CaptureState();
 
             foreach (PlaceableTool tool in placedTools)
             {
@@ -249,12 +280,13 @@ namespace BallGame.Placement
                     remaining[tool.Definition] = GetRemaining(tool.Definition) + 1;
                 }
 
-                Destroy(tool.gameObject);
+                DestroyPlacedInstance(tool.gameObject);
             }
 
             placedTools.Clear();
             SetCurrentCost(0);
             InventoryChanged?.Invoke();
+            RecordOperation(originalState);
         }
 
         public void MoveSelected(Vector2 screenDirection)
@@ -266,14 +298,47 @@ namespace BallGame.Placement
 
             Vector3 originalPosition = selected.transform.position;
             Quaternion originalRotation = selected.transform.rotation;
+            PlacementState originalState = CaptureState();
             Vector2 worldDelta = ScreenPixelsToWorldDelta(screenDirection.normalized * nudgePixels);
             selected.transform.position = originalPosition + (Vector3)worldDelta;
 
-            TryCommitSelectedTransform(originalPosition, originalRotation);
+            if (TryCommitSelectedTransform(originalPosition, originalRotation)
+                && selected.transform.position != originalPosition)
+            {
+                RecordOperation(originalState);
+            }
+        }
+
+        public void Undo()
+        {
+            if (!CanUndo)
+            {
+                return;
+            }
+
+            CancelTransientInteraction();
+            redoHistory.Push(CaptureState());
+            RestoreState(undoHistory.Pop());
+            HistoryChanged?.Invoke();
+        }
+
+        public void Redo()
+        {
+            if (!CanRedo)
+            {
+                return;
+            }
+
+            CancelTransientInteraction();
+            undoHistory.Push(CaptureState());
+            TrimHistory(undoHistory);
+            RestoreState(redoHistory.Pop());
+            HistoryChanged?.Invoke();
         }
 
         public void SetSimulationMode(bool simulating)
         {
+            bool historyAvailabilityChanged = isSimulating != simulating;
             isSimulating = simulating;
             ClearPreview();
             EndPlacedToolDrag(false);
@@ -285,10 +350,16 @@ namespace BallGame.Placement
                     tool.SetSimulationMode(simulating);
                 }
             }
+
+            if (historyAvailabilityChanged)
+            {
+                HistoryChanged?.Invoke();
+            }
         }
 
         public void SetInteractionEnabled(bool enabled)
         {
+            bool historyAvailabilityChanged = interactionEnabled != enabled;
             interactionEnabled = enabled;
             pointerWasDown = false;
             pointerStartedOverUi = false;
@@ -297,6 +368,11 @@ namespace BallGame.Placement
                 ClearPreview();
                 EndPlacedToolDrag(false);
                 Select(null);
+            }
+
+            if (historyAvailabilityChanged)
+            {
+                HistoryChanged?.Invoke();
             }
         }
 
@@ -451,6 +527,7 @@ namespace BallGame.Placement
                 return;
             }
 
+            PlacementState originalState = CaptureState();
             AssignPortalPairId(preview);
             preview.SetPreview(false, true);
             placedTools.Add(preview);
@@ -464,6 +541,7 @@ namespace BallGame.Placement
             activeDefinition = null;
             RecalculateCurrentCost();
             InventoryChanged?.Invoke();
+            RecordOperation(originalState);
         }
 
         private bool IsPlacementValid(PlaceableTool tool)
@@ -657,6 +735,7 @@ namespace BallGame.Placement
 
             draggedPlacedTool = tool;
             draggedOriginalPosition = tool.transform.position;
+            draggedOriginalState = CaptureState();
             draggedPointerOffset = (Vector2)tool.transform.position - ScreenToWorld(screenPosition);
             Select(tool);
             DragPlacedTool(screenPosition);
@@ -684,6 +763,7 @@ namespace BallGame.Placement
             }
 
             bool valid = keepIfValid && IsPlacementValidAfterSync(draggedPlacedTool);
+            bool changed = valid && draggedPlacedTool.transform.position != draggedOriginalPosition;
             if (!valid)
             {
                 draggedPlacedTool.transform.position = draggedOriginalPosition;
@@ -693,6 +773,12 @@ namespace BallGame.Placement
             draggedPlacedTool.SetPreview(false, true);
             Select(draggedPlacedTool);
             draggedPlacedTool = null;
+            if (changed && draggedOriginalState != null)
+            {
+                RecordOperation(draggedOriginalState);
+            }
+
+            draggedOriginalState = null;
         }
 
         private void SelectAt(Vector2 worldPosition)
@@ -796,7 +882,7 @@ namespace BallGame.Placement
         {
             if (preview != null)
             {
-                Destroy(preview.gameObject);
+                DestroyPlacedInstance(preview.gameObject);
                 preview = null;
             }
 
@@ -809,12 +895,141 @@ namespace BallGame.Placement
             {
                 if (tool != null)
                 {
-                    Destroy(tool.gameObject);
+                    DestroyPlacedInstance(tool.gameObject);
                 }
             }
 
             placedTools.Clear();
             SetCurrentCost(0);
+        }
+
+        private static void DestroyPlacedInstance(GameObject instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(instance);
+            }
+            else
+            {
+                DestroyImmediate(instance);
+            }
+        }
+
+        private PlacementState CaptureState()
+        {
+            PlacementState state = new PlacementState();
+            foreach (PlaceableTool tool in placedTools)
+            {
+                if (tool == null || tool.Definition == null)
+                {
+                    continue;
+                }
+
+                PortalTool portal = tool.GetComponent<PortalTool>();
+                state.tools.Add(new PlacedToolState
+                {
+                    definition = tool.Definition,
+                    position = tool.transform.position,
+                    rotation = tool.transform.rotation,
+                    portalPairId = portal != null ? portal.PairId : -1
+                });
+            }
+
+            foreach (KeyValuePair<ToolDefinition, int> pair in remaining)
+            {
+                state.remaining[pair.Key] = pair.Value;
+            }
+
+            return state;
+        }
+
+        private void RestoreState(PlacementState state)
+        {
+            ClearPlacedTools();
+            remaining.Clear();
+            foreach (KeyValuePair<ToolDefinition, int> pair in state.remaining)
+            {
+                remaining[pair.Key] = pair.Value;
+            }
+
+            foreach (PlacedToolState toolState in state.tools)
+            {
+                if (toolState.definition == null || toolState.definition.Prefab == null)
+                {
+                    continue;
+                }
+
+                GameObject instance = Instantiate(toolState.definition.Prefab, placedRoot);
+                instance.transform.SetPositionAndRotation(toolState.position, toolState.rotation);
+                PlaceableTool tool = instance.GetComponent<PlaceableTool>();
+                if (tool == null)
+                {
+                    tool = instance.AddComponent<PlaceableTool>();
+                }
+
+                SimulationMover2D simulationMover = instance.GetComponent<SimulationMover2D>();
+                if (simulationMover != null)
+                {
+                    simulationMover.SetRuntimePlacedInstance(true);
+                }
+
+                tool.Initialize(toolState.definition);
+                PortalTool portal = instance.GetComponent<PortalTool>();
+                if (portal != null && toolState.portalPairId >= 0)
+                {
+                    portal.SetPairId(toolState.portalPairId);
+                }
+
+                tool.SetPreview(false, true);
+                placedTools.Add(tool);
+            }
+
+            Select(null);
+            Physics2D.SyncTransforms();
+            RecalculateCurrentCost();
+            InventoryChanged?.Invoke();
+        }
+
+        private void RecordOperation(PlacementState originalState)
+        {
+            undoHistory.Push(originalState);
+            TrimHistory(undoHistory);
+            redoHistory.Clear();
+            HistoryChanged?.Invoke();
+        }
+
+        private void ClearHistory()
+        {
+            undoHistory.Clear();
+            redoHistory.Clear();
+            HistoryChanged?.Invoke();
+        }
+
+        private static void TrimHistory(Stack<PlacementState> history)
+        {
+            if (history.Count <= HistoryCapacity)
+            {
+                return;
+            }
+
+            PlacementState[] newestFirst = history.ToArray();
+            history.Clear();
+            for (int i = HistoryCapacity - 1; i >= 0; i--)
+            {
+                history.Push(newestFirst[i]);
+            }
+        }
+
+        private void CancelTransientInteraction()
+        {
+            ClearPreview();
+            EndPlacedToolDrag(false);
+            Select(null);
         }
 
         private void RecalculateCurrentCost()
