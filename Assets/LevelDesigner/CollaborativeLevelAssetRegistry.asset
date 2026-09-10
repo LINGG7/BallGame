@@ -14,98 +14,128 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - assetKey: ball
+    buttonName: "\u5C0F\u7403"
     kind: 0
     prefab: {fileID: 8240095656341566447, guid: 56b294d61347cba449808df99b3b8030, type: 3}
     icon: {fileID: 21300000, guid: f24ce25aed6924d4f96f8f05aa9b04b3, type: 3}
     toolDefinition: {fileID: 0}
     supportsSpline: 0
   - assetKey: goal
+    buttonName: "\u7EC8\u70B9"
     kind: 1
     prefab: {fileID: 3777762384437280839, guid: d556cb52c3ae09a4486350b147876378, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 0
   - assetKey: plank
+    buttonName: "\u6728\u677F"
     kind: 2
     prefab: {fileID: 5159242901172802367, guid: c4d2764f199e76e4d9acf4bd3f16f134, type: 3}
     icon: {fileID: 21300000, guid: 13d04d8b057f7c24bbb6a98a63bbd5d4, type: 3}
     toolDefinition: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
     supportsSpline: 0
   - assetKey: spring
+    buttonName: "\u5F39\u7C27"
     kind: 2
     prefab: {fileID: 1112845811365615000, guid: dc01d0e6c4891bf4baf8aca026747791, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
     supportsSpline: 0
   - assetKey: fan
+    buttonName: "\u98CE\u6247"
     kind: 2
     prefab: {fileID: 4751090511571632332, guid: a39a93d4b09666f4a8bf7c4f988fb678, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
     supportsSpline: 0
   - assetKey: conveyor
+    buttonName: "\u52A0\u901F\u5E26"
     kind: 2
     prefab: {fileID: 8585567832392132614, guid: 9e76b266cc01ca944bb48ada774c0cb9, type: 3}
     icon: {fileID: 21300000, guid: 5479fcd12f257314caafecbdc98df330, type: 3}
     toolDefinition: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
     supportsSpline: 0
   - assetKey: magnet_plus
+    buttonName: "\u5438\u5F15\u529B"
     kind: 2
     prefab: {fileID: 4463501066157104591, guid: e4635618e84ee3841a3c6a9cad0d809f, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
     supportsSpline: 0
   - assetKey: magnet_minus
+    buttonName: "\u6392\u65A5\u529B"
     kind: 2
     prefab: {fileID: 4463501066157104591, guid: b23cdc5d2a3927d4f88274a30c4a8d1c, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
     supportsSpline: 0
   - assetKey: portal
+    buttonName: "\u4F20\u9001\u95E8"
     kind: 2
     prefab: {fileID: 8194962196230695540, guid: 9ba289f24c12bb84ab91e47eb6829891, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 11400000, guid: 752ac040948521647b593ccba1b7e68f, type: 2}
     supportsSpline: 0
   - assetKey: water
+    buttonName: "\u6C34\u57DF"
     kind: 2
     prefab: {fileID: 2403779044001056482, guid: a49675b7880130a488c0e9b69dc9ea16, type: 3}
     icon: {fileID: 21300000, guid: c2b879bc2beb4a147a6d731ff0eae3d8, type: 3}
     toolDefinition: {fileID: 11400000, guid: 7444849728177284aa7e218d6d66f0b5, type: 2}
     supportsSpline: 0
   - assetKey: anti_gravity
+    buttonName: "\u53CD\u91CD\u529B"
     kind: 2
     prefab: {fileID: 470010000000000001, guid: 64c54d741df246e49ad78d41ca7f4d76, type: 3}
     icon: {fileID: 21300000, guid: 62d5b0de3da7eed448e0b730acf65fbb, type: 3}
     toolDefinition: {fileID: 11400000, guid: 04d1495afc2f43d4bb5fb6c94a019c29, type: 2}
     supportsSpline: 0
   - assetKey: obstacle
+    buttonName: "\u666E\u901A\u969C\u788D"
     kind: 2
     prefab: {fileID: 1312573017277519491, guid: 2a67a8697c4b3314ab3497f4c7d1bdf0, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 0
   - assetKey: curve_obstacle
+    buttonName: "\u66F2\u7EBF\u969C\u788D"
     kind: 3
     prefab: {fileID: 6999368793927911143, guid: c3791f5e1b240d049b70ce9a57594bec, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 1
   - assetKey: track_intersection
+    buttonName: "\u4EA4\u53C9\u8F68\u9053"
     kind: 2
     prefab: {fileID: 4128212680698636916, guid: 5822a12a4c23f084b871aa77f3a14292, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 0
   - assetKey: visual_to_3d_door
+    buttonName: "3D\u95E8"
     kind: 2
     prefab: {fileID: 100000, guid: 5c6d8e1f2a3b4c5d6e7f8091a2b3c4d5, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 0
   - assetKey: visual_to_2d_door
+    buttonName: "2D\u95E8"
     kind: 2
     prefab: {fileID: 2777699536152184172, guid: 97d327342a613e0499444dfc63731b90, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0
+  - assetKey: DefaultDirectionalLight
+    buttonName: "\u9ED8\u8BA4\u706F\u5149"
+    kind: 2
+    prefab: {fileID: 4347858216363420315, guid: 3f8d47392eff67742b94de9e0baf0178, type: 3}
+    icon: {fileID: 0}
+    toolDefinition: {fileID: 0}
+    supportsSpline: 0
+  - assetKey: wood_3d
+    buttonName: "3D\u969C\u788D"
+    kind: 2
+    prefab: {fileID: 5482101880169320208, guid: 74944bc979f05c3409499d144288d403, type: 3}
     icon: {fileID: 0}
     toolDefinition: {fileID: 0}
     supportsSpline: 0

@@ -13,9 +13,40 @@ namespace BallGame.Tests.Editor
 {
     public sealed class CollaborativeLevelDesignTests
     {
-        private const string RegistryPath = "Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset";
+        private const string RegistryPath = "Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset";
         private const string ScenePath = "Assets/Scenes/LevelDesigner.unity";
 
+        [Test]
+        public void WoodSize_ResizesMeshAndColliderWithoutChangingRootScale()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/Wood_3D.prefab");
+            Assert.That(prefab, Is.Not.Null);
+            GameObject instance = UnityEngine.Object.Instantiate(prefab);
+            try
+            {
+                Type sizeType = Type.GetType("BallGame.Core.WoodSize2D, Assembly-CSharp");
+                Component component = instance.GetComponent(sizeType);
+                Assert.That(component, Is.Not.Null);
+                Vector3 rootScale = instance.transform.localScale;
+                Transform visual = instance.transform.Find("Visual");
+                float depth = visual.localScale.z;
+                MethodInfo setSize = sizeType.GetMethod("SetSize");
+                setSize.Invoke(component, new object[] { new Vector2(6f, 2f) });
+                Assert.That(instance.transform.localScale, Is.EqualTo(rootScale));
+                Assert.That(visual.localScale, Is.EqualTo(new Vector3(2f, 4f, depth)));
+                Assert.That(instance.GetComponent<BoxCollider2D>().size, Is.EqualTo(new Vector2(2f, 4f)));
+                Assert.That(sizeType.GetProperty("Size").GetValue(component), Is.EqualTo(new Vector2(6f, 2f)));
+                setSize.Invoke(component, new object[] { new Vector2(3f, 0.5f) });
+                Assert.That(visual.localScale, Is.EqualTo(Vector3.one), "Repeated edits must not accumulate scaling.");
+                Assert.That(instance.GetComponent<BoxCollider2D>().size, Is.EqualTo(Vector2.one));
+                Assert.That(prefab.transform.localScale, Is.EqualTo(rootScale));
+                Assert.That(prefab.GetComponent<BoxCollider2D>().size, Is.EqualTo(Vector2.one), "Resizing an instance must not modify the prefab.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+        }
         [Test]
         public void DesignerAssets_ExistAndRegistryUsesStableKeys()
         {
@@ -178,6 +209,26 @@ namespace BallGame.Tests.Editor
                 clickOrder.SetValue(toolDefinition, 6);
                 Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, Array.Empty<Collider2D>() }), Is.EqualTo(toolMarker),
                     "A higher ToolDefinition click order must win in sprite bounds fallback.");
+
+                PropertyInfo selectionLocked = markerType.GetProperty("SelectionLocked");
+                Assert.That(selectionLocked.GetValue(toolMarker), Is.False, "New objects default to unlocked.");
+                selectionLocked.SetValue(toolMarker, true);
+                Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, hits }), Is.EqualTo(withoutDefinitionMarker),
+                    "A locked front object must allow collider selection of the object behind it.");
+                Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, Array.Empty<Collider2D>() }), Is.EqualTo(withoutDefinitionMarker),
+                    "Renderer bounds fallback must also skip locked objects.");
+
+                Assert.That(isObjectAt.Invoke(null, new object[] { toolMarker, Vector2.zero, hits }), Is.False,
+                    "An already selected locked object must not bypass world selection filtering.");
+                object lockedRecord = markerType.GetMethod("ToRecord").Invoke(toolMarker, null);
+                string lockedJson = JsonUtility.ToJson(lockedRecord);
+                object restoredRecord = JsonUtility.FromJson(lockedJson, lockedRecord.GetType());
+                selectionLocked.SetValue(toolMarker, false);
+                markerType.GetMethod("Initialize", new[] { restoredRecord.GetType() }).Invoke(toolMarker, new[] { restoredRecord });
+                Assert.That(selectionLocked.GetValue(toolMarker), Is.True, "Lock state must survive JSON round trips.");
+                selectionLocked.SetValue(toolMarker, false);
+                Assert.That(findObject.Invoke(controller, new object[] { Vector2.zero, hits }), Is.EqualTo(toolMarker),
+                    "Unlocking must restore world selection.");
             }
             finally
             {
@@ -255,7 +306,7 @@ namespace BallGame.Tests.Editor
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/LevelDesigner/DesignerUI.prefab");
             UnityEngine.Object designerFont = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/LevelDesigner/Fonts/LXGWWenKai-Light Dynamic SDF.asset");
-            GameObject settingsPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/LevelDesigner/LevelSettingsPanel.prefab");
+            GameObject settingsPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/LevelDesigner/LevelSettingsPanel.prefab");
             Assert.That(prefab, Is.Not.Null);
             Assert.That(designerFont, Is.Not.Null);
             Assert.That(designerFont.GetType().GetProperty("atlasPopulationMode").GetValue(designerFont).ToString(), Is.EqualTo("Dynamic"));

@@ -76,6 +76,7 @@ namespace BallGame.LevelDesign
         public Vector2 position;
         public float rotation;
         public Vector2 scale = Vector2.one;
+        public bool selectionLocked;
         public bool hasSize;
         public Vector2 size;
         public float splineWidth = 0.5f;

@@ -12,8 +12,6 @@ namespace BallGame.LevelDesign
 {
     public sealed class CollaborativeLevelDesignerController : MonoBehaviour
     {
-        private const string RegistryResourcePath = "LevelDesigner/CollaborativeLevelAssetRegistry";
-        private const string LevelSettingsPrefabResourcePath = "LevelDesigner/LevelSettingsPanel";
         private const string BackgroundResourcePath = "Prefabs/WorldBackground";
         private const float DefaultCameraSize = 7f;
         private const float CanvasPadding = 2f;
@@ -36,7 +34,8 @@ namespace BallGame.LevelDesign
         private readonly Dictionary<CollaborativeLevelObject, Button> hierarchyRows = new Dictionary<CollaborativeLevelObject, Button>();
         private readonly Dictionary<Button, ColorBlock> hierarchyRowColors = new Dictionary<Button, ColorBlock>();
         private readonly Dictionary<Rigidbody2D, bool> editorBodySimulation = new Dictionary<Rigidbody2D, bool>();
-        private CollaborativeLevelAssetRegistry registry;
+        [SerializeField] private CollaborativeLevelAssetRegistry registry;
+        [SerializeField] private GameObject levelSettingsPanelPrefab;
         private CollaborativeLevelDocument document = new CollaborativeLevelDocument();
         private Camera worldCamera;
         private Transform worldRoot;
@@ -44,6 +43,9 @@ namespace BallGame.LevelDesign
         private Transform originMarkerRoot;
         private Material originMarkerMaterial;
         private CollaborativeLevelObject selected;
+        private Button lockButton;
+        private Sprite lockedIcon;
+        private Sprite unlockedIcon;
         private CollaborativeSplineHandle draggedSplineHandle;
         private TMP_Text statusText;
         private TMP_Text selectionText;
@@ -99,7 +101,6 @@ namespace BallGame.LevelDesign
 
         private void Awake()
         {
-            registry = Resources.Load<CollaborativeLevelAssetRegistry>(RegistryResourcePath);
             BuildWorld();
             BuildUi();
             if (registry == null)
@@ -301,6 +302,7 @@ namespace BallGame.LevelDesign
                 {
                     CollaborativeLevelAssetEntry captured = registry.Entries[i];
                     Button button = AddButton(paletteContent, captured.assetKey, Vector2.zero, () => AddObject(captured));
+                    SetPaletteButtonLabel(button, captured);
                     RectTransform rect = button.GetComponent<RectTransform>();
                     rect.sizeDelta = new Vector2(230f, 48f);
                 }
@@ -413,6 +415,10 @@ namespace BallGame.LevelDesign
             BindButton(root, "Rotate -Button", () => RotateSelected(-15f));
             BindButton(root, "Rotate +Button", () => RotateSelected(15f));
             BindButton(root, "DuplicateButton", DuplicateSelected);
+            lockButton = FindComponent<Button>(root, "LockButton");
+            lockedIcon = Resources.Load<Sprite>("Art/UI/lock");
+            unlockedIcon = Resources.Load<Sprite>("Art/UI/unlock");
+            BindButton(root, "LockButton", ToggleSelectionLock);
             BindButton(root, "DeleteButton", DeleteSelected);
             BindButton(root, "Add PointButton", AddSplinePoint);
             BindButton(root, "Remove PointButton", RemoveSplinePoint);
@@ -425,6 +431,7 @@ namespace BallGame.LevelDesign
                 {
                     CollaborativeLevelAssetEntry captured = registry.Entries[i];
                     BindButton(root, captured.assetKey + "Button", () => AddObject(captured));
+                    SetPaletteButtonLabel(FindComponent<Button>(root, captured.assetKey + "Button"), captured);
                 }
             }
 
@@ -434,6 +441,17 @@ namespace BallGame.LevelDesign
             RebuildHierarchy();
             BuildLevelSettingsPanel(root);
             return true;
+        }
+
+        private static void SetPaletteButtonLabel(Button button, CollaborativeLevelAssetEntry entry)
+        {
+            if (button == null) return;
+            TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+            if (label == null) return;
+            label.text = entry.ButtonLabel;
+            label.enableAutoSizing = false;
+            label.fontSize = 24f;
+            label.color = Color.black;
         }
 
         private void EnsureRegisteredPaletteButtons(Transform root, RectTransform palette)
@@ -448,7 +466,8 @@ namespace BallGame.LevelDesign
                 if (entry == null || string.IsNullOrWhiteSpace(entry.assetKey)) continue;
                 if (FindComponent<Button>(root, entry.assetKey + "Button") != null) continue;
 
-                Button button = AddButton(content, entry.assetKey, Vector2.zero, () => AddObject(entry));
+                // TryBindPrefabUi binds the click action after all palette buttons exist.
+                Button button = AddButton(content, entry.assetKey, Vector2.zero, null);
                 RectTransform rect = button.GetComponent<RectTransform>();
                 rect.sizeDelta = new Vector2(PaletteCellWidth, PaletteCellHeight);
             }
@@ -469,7 +488,7 @@ namespace BallGame.LevelDesign
         {
             if (levelSettingsPanel != null || canvasRoot == null) return;
 
-            GameObject prefab = Resources.Load<GameObject>(LevelSettingsPrefabResourcePath);
+            GameObject prefab = levelSettingsPanelPrefab;
             if (prefab != null)
             {
                 GameObject instance = Instantiate(prefab, canvasRoot, false);
@@ -500,7 +519,7 @@ namespace BallGame.LevelDesign
                     CollaborativeLevelAssetEntry entry = registry.Entries[i];
                     if (entry == null || !entry.IsInventoryTool) continue;
                     float y = -200f - row * 48f;
-                    AddText(dialog, entry.assetKey + " StockLabel", new Vector2(210f, y), new Vector2(300f, 38f), 18f, TextAlignmentOptions.MidlineLeft).text = entry.assetKey;
+                    AddText(dialog, entry.assetKey + " StockLabel", new Vector2(210f, y), new Vector2(300f, 38f), 18f, TextAlignmentOptions.MidlineLeft).text = entry.ButtonLabel;
                     TMP_InputField input = AddInput(dialog, entry.assetKey + " Stock", new Vector2(475f, y), _ => { });
                     input.contentType = TMP_InputField.ContentType.IntegerNumber;
                     input.characterLimit = 9;
@@ -529,6 +548,8 @@ namespace BallGame.LevelDesign
                 {
                     CollaborativeLevelAssetEntry entry = registry.Entries[i];
                     if (entry == null || !entry.IsInventoryTool) continue;
+                    TMP_Text stockLabel = FindComponent<TMP_Text>(panelRoot, entry.assetKey + " StockLabel");
+                    if (stockLabel != null) stockLabel.text = entry.ButtonLabel;
                     TMP_InputField input = FindComponent<TMP_InputField>(panelRoot, entry.assetKey + " StockInput");
                     if (input != null) levelStockInputs.Add(entry.assetKey, input);
                 }
@@ -1009,7 +1030,7 @@ namespace BallGame.LevelDesign
 
         private static bool IsObjectAt(CollaborativeLevelObject candidate, Vector2 world, Collider2D[] hits)
         {
-            if (candidate == null) return false;
+            if (candidate == null || candidate.SelectionLocked) return false;
             for (int i = 0; i < hits.Length; i++)
             {
                 if (hits[i] == null) continue;
@@ -1028,7 +1049,7 @@ namespace BallGame.LevelDesign
             ref int bestClickSortingOrder,
             ref int bestSiblingIndex)
         {
-            if (candidate == null) return;
+            if (candidate == null || candidate.SelectionLocked) return;
             CollaborativeLevelAssetEntry entry = registry != null ? registry.Find(candidate.AssetKey) : null;
             int clickSortingOrder = entry != null && entry.toolDefinition != null
                 ? entry.toolDefinition.ClickSortingOrder
@@ -1098,6 +1119,23 @@ namespace BallGame.LevelDesign
             RemoveHierarchyItem(selected);
             Select(null);
             Destroy(target);
+        }
+
+        private void ToggleSelectionLock()
+        {
+            if (selected == null || simulating) return;
+            PushUndo();
+            selected.SelectionLocked = !selected.SelectionLocked;
+            RefreshSelection();
+        }
+
+        private void RefreshLockButton()
+        {
+            if (lockButton == null) return;
+            lockButton.interactable = selected != null && !simulating;
+            Image icon = lockButton.GetComponent<Image>();
+            Sprite stateIcon = selected != null && selected.SelectionLocked ? lockedIcon : unlockedIcon;
+            if (icon != null && stateIcon != null) icon.sprite = stateIcon;
         }
 
         private void DuplicateSelected()
@@ -1980,6 +2018,7 @@ namespace BallGame.LevelDesign
         private void RefreshSelection()
         {
             bool hasSelection = selected != null;
+            RefreshLockButton();
             bool trackSelected = hasSelection && selected.GetComponent<TrackIntersectionEditable2D>() != null && selected.TrackIntersection != null;
             if (trackIntersectionInfo != null) trackIntersectionInfo.SetActive(trackSelected);
             if (selectionText != null)
@@ -2479,7 +2518,7 @@ namespace BallGame.LevelDesign
             rect.sizeDelta = new Vector2(116f, 46f);
             buttonObject.GetComponent<Image>().color = new Color(0.90f, 0.72f, 0.28f, 1f);
             Button button = buttonObject.GetComponent<Button>();
-            button.onClick.AddListener(action);
+            if (action != null) button.onClick.AddListener(action);
             TMP_Text text = AddText(buttonObject.transform, "Text", Vector2.zero, rect.sizeDelta, 18f, TextAlignmentOptions.Center);
             text.text = label;
             return button;

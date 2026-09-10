@@ -20,7 +20,7 @@ namespace BallGame.Editor
         private const string DesignerFontFolder = "Assets/LevelDesigner/Fonts";
         private const string DesignerFontPath = DesignerFontFolder + "/LXGWWenKai-Light Dynamic SDF.asset";
         private const string SourceFontPath = "Assets/TextMesh Pro/Fonts/LXGWWenKai-Light.ttf";
-        private const string LevelSettingsPrefabPath = "Assets/Resources/LevelDesigner/LevelSettingsPanel.prefab";
+        private const string LevelSettingsPrefabPath = "Assets/LevelDesigner/LevelSettingsPanel.prefab";
         private const string TrackIntersectionPrefabPath = "Assets/Resources/Prefabs/TrackIntersection.prefab";
         private const string BrowserWebGlDefine = "BALLGAME_BROWSER_WEBGL";
         private static readonly string[] TapBrowserPluginPaths =
@@ -44,12 +44,12 @@ namespace BallGame.Editor
             EditorApplication.delayCall += () =>
             {
                 if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-                CollaborativeLevelAssetRegistry registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>("Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
+                CollaborativeLevelAssetRegistry registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>("Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
                 EnsureTrackIntersectionPrefabEditable();
                 if (registry == null || RegistryNeedsRefresh(registry))
                 {
                     CollaborativeLevelRegistryBuilder.CreateRegistry();
-                    registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>("Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
+                    registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>("Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
                 }
                 CreateMissingDesignerDynamicFont();
                 EnsureDesignerTitleFont();
@@ -197,7 +197,7 @@ namespace BallGame.Editor
         private static void CreateMissingLevelSettingsPanelPrefab()
         {
             if (AssetDatabase.LoadAssetAtPath<GameObject>(LevelSettingsPrefabPath) != null) return;
-            CollaborativeLevelAssetRegistry registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>("Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
+            CollaborativeLevelAssetRegistry registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>("Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
             if (registry == null) throw new System.InvalidOperationException("Create the collaborative asset registry before the Level Settings prefab.");
 
             GameObject stagingCanvas = new GameObject("Level Settings Prefab Staging", typeof(Canvas));
@@ -351,7 +351,7 @@ namespace BallGame.Editor
                 RectTransform content = GetOrCreatePaletteScrollHierarchy(palette);
 
                 CollaborativeLevelAssetRegistry registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>(
-                    "Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
+                    "Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
                 HashSet<Transform> moved = new HashSet<Transform>();
                 if (registry != null)
                 {
@@ -578,7 +578,12 @@ namespace BallGame.Editor
             camera.orthographicSize = 7f;
             camera.transform.position = new Vector3(0f, 0f, -10f);
             camera.backgroundColor = new Color(0.88f, 0.92f, 0.94f, 1f);
-            new GameObject("Level Designer", typeof(CollaborativeLevelDesignerController));
+            GameObject designer = new GameObject("Level Designer", typeof(CollaborativeLevelDesignerController));
+            SerializedObject controller = new SerializedObject(designer.GetComponent<CollaborativeLevelDesignerController>());
+            controller.FindProperty("registry").objectReferenceValue = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>(
+                "Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset");
+            controller.FindProperty("levelSettingsPanelPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(LevelSettingsPrefabPath);
+            controller.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.SaveScene(scene, ScenePath, false);
             EditorSceneManager.CloseScene(scene, true);
             AssetDatabase.SaveAssets();

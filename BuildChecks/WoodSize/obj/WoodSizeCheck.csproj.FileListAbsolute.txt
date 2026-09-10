@@ -1,0 +1,6 @@
+E:\Unity Projects\BallGame\BuildChecks\WoodSize\bin\Assembly-CSharp.dll
+E:\Unity Projects\BallGame\BuildChecks\WoodSize\bin\Assembly-CSharp.pdb
+E:\Unity Projects\BallGame\BuildChecks\WoodSize\obj\WoodSizeCheck.csproj.AssemblyReference.cache
+E:\Unity Projects\BallGame\BuildChecks\WoodSize\obj\WoodSizeCheck.csproj.CoreCompileInputs.cache
+E:\Unity Projects\BallGame\BuildChecks\WoodSize\obj\Assembly-CSharp.dll
+E:\Unity Projects\BallGame\BuildChecks\WoodSize\obj\Assembly-CSharp.pdb

@@ -13,7 +13,7 @@ namespace BallGame.Editor
 {
     public static class CollaborativeLevelImporter
     {
-        private const string RegistryPath = "Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset";
+        private const string RegistryPath = "Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset";
         private const string TemplateScenePath = "Assets/Scenes/NormalLevels/Level_Template.unity";
         private const string SceneDirectory = "Assets/Scenes/NormalLevels";
         private const string DefinitionDirectory = "Assets/LevelDefinitions";

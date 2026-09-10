@@ -7,18 +7,24 @@ namespace BallGame.Editor
 {
     public static class CollaborativeLevelRegistryBuilder
     {
-        private const string RegistryPath = "Assets/Resources/LevelDesigner/CollaborativeLevelAssetRegistry.asset";
+        private const string RegistryPath = "Assets/LevelDesigner/CollaborativeLevelAssetRegistry.asset";
 
         [MenuItem("Ball Game/Level Design/Create Asset Registry")]
         public static void CreateRegistry()
         {
-            EnsureFolder("Assets/Resources/LevelDesigner");
+            EnsureFolder("Assets/LevelDesigner");
             CollaborativeLevelAssetRegistry registry = AssetDatabase.LoadAssetAtPath<CollaborativeLevelAssetRegistry>(RegistryPath);
             if (registry == null)
             {
                 registry = ScriptableObject.CreateInstance<CollaborativeLevelAssetRegistry>();
                 AssetDatabase.CreateAsset(registry, RegistryPath);
             }
+            // Preserve labels authored in the Inspector when rebuilding the registry.
+            var buttonNames = new Dictionary<string, string>();
+            foreach (CollaborativeLevelAssetEntry entry in registry.Entries)
+                if (entry != null && !string.IsNullOrWhiteSpace(entry.assetKey))
+                    buttonNames[entry.assetKey] = entry.buttonName;
+
             SerializedObject serialized = new SerializedObject(registry);
             SerializedProperty entries = serialized.FindProperty("entries");
             entries.arraySize = 0;
@@ -39,6 +45,15 @@ namespace BallGame.Editor
             Add(entries, "track_intersection", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/TrackIntersection.prefab", null, null);
             Add(entries, "visual_to_3d_door", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/VisualTo3DDoor.prefab", null, null);
             Add(entries, "visual_to_2d_door", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/VisualTo2DDoor.prefab", null, null);
+            Add(entries, "wood_3d", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/Wood_3D.prefab", null, null);
+
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+                string key = entry.FindPropertyRelative("assetKey").stringValue;
+                entry.FindPropertyRelative("buttonName").stringValue =
+                    buttonNames.TryGetValue(key, out string name) ? name ?? string.Empty : string.Empty;
+            }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(registry);

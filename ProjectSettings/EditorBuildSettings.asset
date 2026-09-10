@@ -161,4 +161,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/NormalLevels/Level_42_Test69632.unity
     guid: 530567d7145709f46baa75d3fd27444a
+  - enabled: 1
+    path: Assets/Scenes/NormalLevels/Level_42_test42.unity
+    guid: c699ba19816f1094087dc1b3897d14dc
   m_configObjects: {}

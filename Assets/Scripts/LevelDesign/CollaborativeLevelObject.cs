@@ -11,6 +11,7 @@ namespace BallGame.LevelDesign
         public CollaborativeObjectKind Kind { get; private set; }
         public float SplineWidth { get; set; } = 0.5f;
         public bool SplineClosed { get; set; }
+        public bool SelectionLocked { get; set; }
         public string SplineCollisionMode { get; set; } = "SolidPolygon";
         public bool SimulationMoverAttached { get; private set; }
         public List<CollaborativeProperty> Properties { get; } = new List<CollaborativeProperty>();
@@ -23,6 +24,7 @@ namespace BallGame.LevelDesign
             AssetKey = entry.assetKey;
             Kind = entry.kind;
             SimulationMoverAttached = false;
+            SelectionLocked = false;
             TrackIntersectionEditable2D editable = GetComponent<TrackIntersectionEditable2D>();
             TrackIntersection = editable != null ? editable.CaptureData() : null;
         }
@@ -33,6 +35,7 @@ namespace BallGame.LevelDesign
             AssetKey = record.assetKey;
             Kind = record.kind;
             SimulationMoverAttached = record.simulationMoverAttached;
+            SelectionLocked = record.selectionLocked;
             SplineWidth = record.splineWidth;
             SplineClosed = record.splineClosed;
             SplineCollisionMode = record.splineCollisionMode;
@@ -65,6 +68,7 @@ namespace BallGame.LevelDesign
                 position = transform.localPosition,
                 rotation = transform.localEulerAngles.z,
                 scale = transform.localScale,
+                selectionLocked = SelectionLocked,
                 hasSize = hasSize,
                 size = hasSize ? editable.Size : Vector2.zero,
                 splineWidth = SplineWidth,

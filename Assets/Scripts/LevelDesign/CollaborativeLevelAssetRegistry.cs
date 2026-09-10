@@ -9,11 +9,15 @@ namespace BallGame.LevelDesign
     public sealed class CollaborativeLevelAssetEntry
     {
         public string assetKey;
+        [Tooltip("Button label in the LevelDesigner palette. Uses assetKey when empty.")]
+        public string buttonName;
         public CollaborativeObjectKind kind;
         public GameObject prefab;
         public Sprite icon;
         public ToolDefinition toolDefinition;
         public bool supportsSpline;
+
+        public string ButtonLabel => string.IsNullOrWhiteSpace(buttonName) ? assetKey : buttonName;
 
         public bool IsInventoryTool => kind == CollaborativeObjectKind.Tool && toolDefinition != null;
     }
