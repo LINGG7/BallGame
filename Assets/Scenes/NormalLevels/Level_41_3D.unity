@@ -3249,7 +3249,7 @@ MonoBehaviour:
   nextButton: {fileID: 406293074}
   returnButton: {fileID: 0}
   level: {fileID: 11400000, guid: 047146d14ccf2d14e86e7888132a8370, type: 2}
-  nextSceneName: Level_42
+  nextSceneName: Level_42_2D
   failY: -12
   simulationTimeout: 25
   failureResetDelay: 2

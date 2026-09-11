@@ -66,12 +66,9 @@ namespace BallGame.Editor
 
         private static bool RegistryNeedsRefresh(CollaborativeLevelAssetRegistry registry)
         {
-            foreach (CollaborativeLevelAssetEntry entry in registry.Entries)
-                if (entry != null && entry.kind == CollaborativeObjectKind.Tool
-                    && entry.assetKey != "obstacle" && entry.assetKey != "track_intersection"
-                    && entry.toolDefinition == null) return true;
+            // Non-inventory objects legitimately have no ToolDefinition.
             CollaborativeLevelAssetEntry track = registry.Find("track_intersection");
-            return track == null || track.kind != CollaborativeObjectKind.Tool || track.prefab == null || track.toolDefinition != null;
+            return track == null || track.prefab == null;
         }
 
         [MenuItem("Ball Game/Level Design/Upgrade Track Intersection Editable Prefab")]

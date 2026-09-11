@@ -13,7 +13,8 @@ Shader "BallGame/Wood Procedural"
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        // Procedural grain requires per-object coordinates, which dynamic batching discards.
+        Tags { "RenderType"="Opaque" "DisableBatching"="True" }
         LOD 200
 
         CGPROGRAM

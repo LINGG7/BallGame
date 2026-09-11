@@ -27,7 +27,7 @@ namespace BallGame.Editor
 
             SerializedObject serialized = new SerializedObject(registry);
             SerializedProperty entries = serialized.FindProperty("entries");
-            entries.arraySize = 0;
+            // Keep existing entries and Inspector overrides; only append missing defaults.
 
             Add(entries, "ball", CollaborativeObjectKind.Ball, "Assets/Resources/Prefabs/Ball.prefab", "Assets/Resources/Art/Skins/Ball_Wood.png", null);
             Add(entries, "goal", CollaborativeObjectKind.Goal, "Assets/Resources/Prefabs/Goal.prefab", null, null);
@@ -46,6 +46,7 @@ namespace BallGame.Editor
             Add(entries, "visual_to_3d_door", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/VisualTo3DDoor.prefab", null, null);
             Add(entries, "visual_to_2d_door", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/VisualTo2DDoor.prefab", null, null);
             Add(entries, "wood_3d", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/Wood_3D.prefab", null, null);
+            Add(entries, "DefaultDirectionalLight", CollaborativeObjectKind.Tool, "Assets/Resources/Prefabs/DefaultDirectionalLight.prefab", null, null);
 
             for (int i = 0; i < entries.arraySize; i++)
             {
@@ -63,6 +64,14 @@ namespace BallGame.Editor
 
         private static void Add(SerializedProperty entries, string key, CollaborativeObjectKind kind, string prefabPath, string iconPath, string toolPath)
         {
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                SerializedProperty existing = entries.GetArrayElementAtIndex(i);
+                if (existing.FindPropertyRelative("assetKey").stringValue != key) continue;
+                if (existing.FindPropertyRelative("prefab").objectReferenceValue == null)
+                    existing.FindPropertyRelative("prefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                return;
+            }
             int index = entries.arraySize++;
             SerializedProperty element = entries.GetArrayElementAtIndex(index);
             element.FindPropertyRelative("assetKey").stringValue = key;

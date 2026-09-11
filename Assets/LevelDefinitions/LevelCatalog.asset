@@ -178,6 +178,6 @@ MonoBehaviour:
     displayTitle: 41 3D
     levelDefinition: {fileID: 11400000, guid: 047146d14ccf2d14e86e7888132a8370, type: 2}
   - levelNumber: 42
-    sceneName: Level_42_test42
-    displayTitle: 42 test42
-    levelDefinition: {fileID: 11400000, guid: 696bf9948f2929f44bd29b8f2ddfddd6, type: 2}
+    sceneName: Level_42_2D
+    displayTitle: 42 2D
+    levelDefinition: {fileID: 11400000, guid: 5101097fe951cba49af2642c51ba5b74, type: 2}
