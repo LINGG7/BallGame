@@ -1,0 +1,1 @@
+PASS: All four prefabs and shader references valid; switching effects/appearance/effects keeps exactly one set of cards; UI and trail previews rendered.

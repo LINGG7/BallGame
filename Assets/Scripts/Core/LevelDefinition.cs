@@ -27,6 +27,10 @@ namespace BallGame.Core
 		[SerializeField]
 		private List<ToolStock> tools = new List<ToolStock>();
 
+		[SerializeField] private List<BallGame.Placement.PlacementHintTarget> placementHints = new List<BallGame.Placement.PlacementHintTarget>();
+
+		public IReadOnlyList<BallGame.Placement.PlacementHintTarget> PlacementHints => placementHints;
+
 		public string LevelTitle => levelTitle;
 
 		public LevelMode Mode => mode;

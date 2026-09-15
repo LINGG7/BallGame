@@ -15,6 +15,15 @@ namespace BallGame.UI
         private static readonly Color CardNormal = new Color(0.98f, 0.96f, 0.90f, 1f);
         private static readonly Color CardSelected = new Color(1f, 0.86f, 0.50f, 1f);
 
+        private bool effectsCategory;
+        private bool unlockPending;
+        private Button skinsTab;
+        private Button effectsTab;
+        private BallSkinCatalog ActiveCatalog => effectsCategory ? EffectSkinService.Catalog : BallSkinService.Catalog;
+        private string CurrentSkinId => effectsCategory ? EffectSkinService.CurrentSkinId : BallSkinService.CurrentSkinId;
+        private bool IsUnlocked(string id) => effectsCategory ? EffectSkinService.IsUnlocked(id) : BallSkinService.IsUnlocked(id);
+        private bool EquipSkin(string id) => effectsCategory ? EffectSkinService.EquipSkin(id) : BallSkinService.EquipSkin(id);
+
         private Button shopButton;
         private GameObject modalRoot;
         private Transform cardArea;
@@ -112,6 +121,10 @@ namespace BallGame.UI
 
             Transform panel = modalRoot.transform.Find("Panel");
             BindCloseButton(panel);
+            skinsTab = panel != null ? panel.Find("CategorySidebar/SkinsTab")?.GetComponent<Button>() : null;
+            effectsTab = panel != null ? panel.Find("CategorySidebar/EffectsTab")?.GetComponent<Button>() : null;
+            if (skinsTab != null) skinsTab.onClick.AddListener(() => SwitchCategory(false));
+            if (effectsTab != null) effectsTab.onClick.AddListener(() => SwitchCategory(true));
 
             cardArea = panel != null ? panel.Find("Content/CardArea") : null;
             if (cardArea == null && panel != null)
@@ -148,6 +161,64 @@ namespace BallGame.UI
             modalRoot.SetActive(false);
         }
 
+        private void SwitchCategory(bool effects)
+        {
+            if (effectsCategory == effects) return;
+            StopPageAnimation();
+            pageAnimating = false;
+            pageDragging = false;
+            if (cardScrollRect != null) cardScrollRect.StopMovement();
+            effectsCategory = effects;
+            selectedIndex = FindCurrentIndex();
+            currentPage = selectedIndex / CardsPerPage;
+            BuildCards();
+            SetStatus(string.Empty);
+            Refresh();
+            Canvas.ForceUpdateCanvases();
+            SetPageImmediate(currentPage);
+        }
+
+        private void RefreshCategory()
+        {
+            SetCategoryTab(skinsTab, !effectsCategory);
+            SetCategoryTab(effectsTab, effectsCategory);
+            Transform panel = modalRoot != null ? modalRoot.transform.Find("Panel") : null;
+            if (panel == null) return;
+            var hint = panel.Find("CategorySidebar/CategoryHint") as RectTransform;
+            if (hint != null) hint.anchoredPosition = new Vector2(hint.anchoredPosition.x, effectsCategory ? 154f : 244f);
+            SetCategoryText(panel, "Content/SkinBanner/Headline", effectsCategory ? "特效皮肤收藏" : "球球皮肤收藏");
+            SetCategoryText(panel, "Content/SkinBanner/Subtitle", effectsCategory ? "基础光带免费，主题特效看广告永久解锁" : "换上喜欢的外观，开始新的挑战");
+            SetCategoryText(panel, "Content/SectionTitle", effectsCategory ? "特效皮肤" : "皮肤商品");
+            SetCategoryText(panel, "SkinDetail/DetailTitle", effectsCategory ? "特效预览" : "皮肤预览");
+            var banner = panel.Find("Content/SkinBanner/BannerPreview")?.GetComponent<Image>();
+            if (banner != null && ActiveCatalog != null && ActiveCatalog.Skins.Count > 0)
+            {
+                banner.sprite = ActiveCatalog.Skins[Mathf.Clamp(selectedIndex, 0, ActiveCatalog.Skins.Count - 1)].previewSprite;
+                banner.enabled = banner.sprite != null;
+            }
+        }
+
+        private static void SetCategoryTab(Button tab, bool selected)
+        {
+            if (tab == null) return;
+            tab.interactable = true;
+            var colors = tab.colors;
+            colors.normalColor = selected ? CardSelected : CardNormal;
+            colors.selectedColor = colors.normalColor;
+            tab.colors = colors;
+        }
+
+        private static void SetCategoryText(Transform panel, string path, string value)
+        {
+            var label = panel.Find(path)?.GetComponent<TMP_Text>();
+            if (label != null)
+            {
+                label.text = value;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 14f;
+            }
+        }
+
         private void BindCloseButton(Transform panel)
         {
             Button backButton = panel != null ? panel.Find("BackButton")?.GetComponent<Button>() : null;
@@ -157,14 +228,22 @@ namespace BallGame.UI
 
         private void BuildCards()
         {
-            BallSkinCatalog catalog = BallSkinService.Catalog;
+            foreach (var oldCard in cardButtons)
+            {
+                if (oldCard == null) continue;
+                oldCard.gameObject.SetActive(false);
+                if (Application.isPlaying) Destroy(oldCard.gameObject);
+                else DestroyImmediate(oldCard.gameObject);
+            }
+            cardButtons.Clear();
+            cardStates.Clear();
+            cardSkinIndices.Clear();
+            pageCount = 1;
+            BallSkinCatalog catalog = ActiveCatalog;
             if (cardArea == null || cardTemplate == null || catalog == null)
                 return;
 
             cardTemplate.gameObject.SetActive(false);
-            cardButtons.Clear();
-            cardStates.Clear();
-            cardSkinIndices.Clear();
             for (int i = 0; i < catalog.Skins.Count; i++)
             {
                 BallSkinEntry skin = catalog.Skins[i];
@@ -213,30 +292,45 @@ namespace BallGame.UI
 
         private void ActivateSelected()
         {
-            BallSkinCatalog catalog = BallSkinService.Catalog;
+            BallSkinCatalog catalog = ActiveCatalog;
             if (catalog == null || selectedIndex < 0 || selectedIndex >= catalog.Skins.Count)
                 return;
 
             BallSkinEntry skin = catalog.Skins[selectedIndex];
-            if (!BallSkinService.IsUnlocked(skin.id))
+            if (!IsUnlocked(skin.id))
             {
-                SetStatus("正在准备解锁...");
-                BallSkinService.TryUnlock(skin.id, success =>
+                if (unlockPending) return;
+                if (effectsCategory && BallSkinService.RewardedAdService == null)
                 {
-                    SetStatus(success ? "皮肤已解锁，可以装备" : "暂未解锁");
+                    SetStatus("广告暂不可用，请稍后重试");
+                    return;
+                }
+                bool requestedEffects = effectsCategory;
+                unlockPending = true;
+                SetStatus("正在准备广告...");
+                Refresh();
+                System.Action<bool> completed = success =>
+                {
+                    if (this == null) return;
+                    unlockPending = false;
+                    if (effectsCategory == requestedEffects)
+                        SetStatus(success ? "皮肤已永久解锁，可以装备" : "未完成广告，请重试");
                     Refresh();
-                });
+                };
+                if (requestedEffects) EffectSkinService.TryUnlock(skin.id, completed);
+                else BallSkinService.TryUnlock(skin.id, completed);
                 return;
             }
 
-            bool equipped = BallSkinService.EquipSkin(skin.id);
+            bool equipped = EquipSkin(skin.id);
             SetStatus(equipped ? "已装备：" + skin.displayName : "该皮肤尚未解锁");
             Refresh();
         }
 
         private void Refresh()
         {
-            BallSkinCatalog catalog = BallSkinService.Catalog;
+            RefreshCategory();
+            BallSkinCatalog catalog = ActiveCatalog;
             if (catalog == null || catalog.Skins.Count == 0)
             {
                 SetStatus("暂无可用皮肤");
@@ -246,14 +340,14 @@ namespace BallGame.UI
             }
 
             selectedIndex = Mathf.Clamp(selectedIndex, 0, catalog.Skins.Count - 1);
-            string currentSkinId = BallSkinService.CurrentSkinId;
+            string currentSkinId = CurrentSkinId;
             for (int i = 0; i < cardButtons.Count; i++)
             {
                 int skinIndex = cardSkinIndices[i];
                 BallSkinEntry skin = catalog.Skins[skinIndex];
                 bool selected = selectedIndex == skinIndex;
                 bool equipped = currentSkinId == skin.id;
-                bool unlocked = BallSkinService.IsUnlocked(skin.id);
+                bool unlocked = IsUnlocked(skin.id);
 
                 ColorBlock colors = cardButtons[i].colors;
                 colors.normalColor = selected ? CardSelected : CardNormal;
@@ -266,7 +360,7 @@ namespace BallGame.UI
             }
 
             BallSkinEntry selectedSkin = catalog.Skins[selectedIndex];
-            bool selectedUnlocked = BallSkinService.IsUnlocked(selectedSkin.id);
+            bool selectedUnlocked = IsUnlocked(selectedSkin.id);
             bool selectedEquipped = currentSkinId == selectedSkin.id;
 
             if (selectedPreview != null)
@@ -279,11 +373,11 @@ namespace BallGame.UI
             if (selectedState != null)
                 selectedState.text = selectedEquipped ? "当前装备" : (selectedUnlocked ? "已拥有，可装备" : "尚未解锁");
             if (actionButton != null)
-                actionButton.interactable = !selectedEquipped;
+                actionButton.interactable = !selectedEquipped && !unlockPending && (!effectsCategory || !EffectSkinService.IsUnlockPending);
             if (actionLabel != null)
-                actionLabel.text = selectedEquipped
+                actionLabel.text = unlockPending ? "等待广告完成" : selectedEquipped
                     ? "已装备"
-                    : (selectedUnlocked ? "装备" : (BallSkinService.RewardedAdService == null ? "解锁" : "观看广告解锁"));
+                    : (selectedUnlocked ? "装备" : (effectsCategory || BallSkinService.RewardedAdService != null ? "观看广告解锁" : "解锁"));
             UpdatePageButtons();
         }
 
@@ -427,13 +521,13 @@ namespace BallGame.UI
 
         private int FindCurrentIndex()
         {
-            BallSkinCatalog catalog = BallSkinService.Catalog;
+            BallSkinCatalog catalog = ActiveCatalog;
             if (catalog == null)
                 return 0;
 
             for (int i = 0; i < catalog.Skins.Count; i++)
             {
-                if (catalog.Skins[i] != null && catalog.Skins[i].id == BallSkinService.CurrentSkinId)
+                if (catalog.Skins[i] != null && catalog.Skins[i].id == CurrentSkinId)
                     return i;
             }
             return 0;

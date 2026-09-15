@@ -1,0 +1,5 @@
+*.dll
+*.rsp
+*.request
+ServiceTests/bin/
+ServiceTests/obj/

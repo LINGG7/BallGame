@@ -57,6 +57,8 @@ namespace BallGame.Core
         public bool HasNextLevel => !string.IsNullOrWhiteSpace(nextSceneName);
         public LevelCompletionResult CurrentCompletionResult => currentCompletionResult;
         public event Action<GameState> StateChanged;
+        public event Action LevelResetting;
+        public LevelDefinition CurrentLevel => level;
 
         private void Awake()
         {
@@ -103,6 +105,24 @@ namespace BallGame.Core
             if (returnButton == null) returnButton = hudRefs.ReturnButton;
         }
 
+        public void ShowPlacementHintFeedback(string message)
+        {
+            if (State == GameState.Build)
+                SetStatus(message ?? "拖动道具，移动旋转，开始模拟。");
+        }
+
+        private void BindPlacementHints()
+        {
+            if (hudRefs == null) hudRefs = FindObjectOfType<GameHudRefs>();
+            if (placementManager == null) placementManager = GetComponent<PlacementManager>();
+            if (hudRefs == null || hudRefs.HelpButton == null || placementManager == null) return;
+
+            var hints = GetComponent<PlacementHintController>();
+            if (hints == null) hints = gameObject.AddComponent<PlacementHintController>();
+            hints.Bind(this, placementManager, cameraController, hudRefs.HelpButton,
+                hudRefs.HelpButton.GetComponentInChildren<TMP_Text>(true));
+        }
+
         private void OnDestroy()
         {
             if (placementManager != null)
@@ -118,6 +138,7 @@ namespace BallGame.Core
 
         private void Start()
         {
+            BindPlacementHints();
             if (runButton != null)
             {
                 runButton.onClick.AddListener(StartSimulation);
@@ -174,6 +195,7 @@ namespace BallGame.Core
 
         public void LoadCurrentLevel()
         {
+            LevelResetting?.Invoke();
             CancelPendingFailureReset();
             if (level == null)
             {
@@ -271,6 +293,7 @@ namespace BallGame.Core
 
         public void ResetToBuild()
         {
+            LevelResetting?.Invoke();
             CancelPendingFailureReset();
             if (level == null || State == GameState.Intro)
             {

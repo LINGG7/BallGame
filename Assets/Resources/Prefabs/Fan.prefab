@@ -4969,7 +4969,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e00a79cda8e37e1428a68946cbe580ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  definition: {fileID: 0}
+  definition: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
   canEdit: 1
   renderers:
   - {fileID: 2568914437557506552}

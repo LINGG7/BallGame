@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a2b3c4d5e6f78900112233445566770, type: 3}
+  m_Name: EffectSkinCatalog
+  m_EditorClassIdentifier: 
+  defaultSkinId: basic
+  skins:
+  - id: basic
+    displayName: "\u57FA\u7840\u5149\u5E26"
+    previewSprite: {fileID: -1109815837435495493, guid: e640b0f6f3657384f848f7f7f761a2b6, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 957523596935918742, guid: a05e7187b66342d4391180d915a0060b, type: 3}
+    sphereProjectionRadius: 0
+    featured: 0
+    initiallyUnlocked: 1
+    unlockType: 0
+  - id: fire
+    displayName: "\u706B\u7130"
+    previewSprite: {fileID: 8093548124011287066, guid: ed83525de6d162d48990b4118bfb26e3, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 9151320875604712312, guid: f8749bfa691665f4f94749a963f62d14, type: 3}
+    sphereProjectionRadius: 0
+    featured: 0
+    initiallyUnlocked: 0
+    unlockType: 0
+  - id: ice
+    displayName: "\u51B0\u971C"
+    previewSprite: {fileID: -4312838907908141761, guid: 94be38c8d5b7b4649b71cfe381f249f0, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 1067036893795928540, guid: d5c5460208ad02c40a9cc5caa4b7f118, type: 3}
+    sphereProjectionRadius: 0
+    featured: 0
+    initiallyUnlocked: 0
+    unlockType: 0
+  - id: star
+    displayName: "\u661F\u5149"
+    previewSprite: {fileID: -6419746732936441354, guid: 6c777f4588a45c646aab62bc2bf47e4b, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 1035494535920337180, guid: 5b80f190ac50d7743b4e6b87a923b080, type: 3}
+    sphereProjectionRadius: 0
+    featured: 0
+    initiallyUnlocked: 0
+    unlockType: 0

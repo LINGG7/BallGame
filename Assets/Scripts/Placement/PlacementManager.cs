@@ -44,6 +44,7 @@ namespace BallGame.Placement
         private PlaceableTool selected;
         private PlaceableTool draggedPlacedTool;
         private Vector3 draggedOriginalPosition;
+        private Quaternion draggedOriginalRotation;
         private Vector2 draggedPointerOffset;
         private PlacementState draggedOriginalState;
         private Vector2 pointerDownScreenPosition;
@@ -54,13 +55,28 @@ namespace BallGame.Placement
         private bool unlimitedSupply;
 
         public event System.Action InventoryChanged;
+        public event System.Action LevelResetting;
+        public PlacementHintController HintController { get; set; }
+        private bool hintInputBlocked;
+        public bool CanInteract => interactionEnabled && !hintInputBlocked;
+        public bool IsBuildInteractionAvailable => CanInteract && !isSimulating;
+        public PlaceableTool DraggingTool => preview != null ? preview : draggedPlacedTool;
+        public IReadOnlyList<PlaceableTool> PlacedTools => placedTools;
+        public void SetHintInputBlocked(bool blocked)
+        {
+            if (hintInputBlocked == blocked) return;
+            hintInputBlocked = blocked;
+            if (blocked) CancelTransientInteraction();
+            pointerWasDown = Input.GetMouseButton(0) || Input.touchCount > 0;
+            HistoryChanged?.Invoke();
+        }
         public event System.Action CostChanged;
         public event System.Action HistoryChanged;
 
         public bool HasUnlimitedSupply => unlimitedSupply;
         public int CurrentCost { get; private set; }
-        public bool CanUndo => interactionEnabled && !isSimulating && undoHistory.Count > 0;
-        public bool CanRedo => interactionEnabled && !isSimulating && redoHistory.Count > 0;
+        public bool CanUndo => CanInteract && !isSimulating && undoHistory.Count > 0;
+        public bool CanRedo => CanInteract && !isSimulating && redoHistory.Count > 0;
 
         public int GetRemaining(ToolDefinition definition)
         {
@@ -85,7 +101,7 @@ namespace BallGame.Placement
 
         private void Update()
         {
-            if (isSimulating || !interactionEnabled)
+            if (isSimulating || !CanInteract)
             {
                 return;
             }
@@ -106,6 +122,7 @@ namespace BallGame.Placement
 
         public void ResetForLevel(LevelDefinition level)
         {
+            LevelResetting?.Invoke();
             ClearPlacedTools();
             ClearHistory();
             remaining.Clear();
@@ -145,7 +162,7 @@ namespace BallGame.Placement
 
         public void BeginPlaceDrag(ToolDefinition definition, Vector2 screenPosition)
         {
-            if (!interactionEnabled || definition == null || definition.Prefab == null || !CanPlace(definition) || isSimulating)
+            if (!CanInteract || definition == null || definition.Prefab == null || !CanPlace(definition) || isSimulating)
             {
                 return;
             }
@@ -174,7 +191,7 @@ namespace BallGame.Placement
 
         public void UpdatePlaceDrag(Vector2 screenPosition)
         {
-            if (interactionEnabled && preview != null)
+            if (CanInteract && preview != null)
             {
                 preview.transform.position = ScreenToWorld(screenPosition);
             }
@@ -189,7 +206,8 @@ namespace BallGame.Placement
 
             Vector2 worldPosition = ScreenToWorld(screenPosition);
             preview.transform.position = worldPosition;
-            if (allowPlace && IsPlacementValidAfterSync(preview))
+            if (allowPlace && IsBuildInteractionAvailable) HintController?.TrySnap(preview);
+            if (allowPlace && IsBuildInteractionAvailable && IsPlacementValidAfterSync(preview))
             {
                 PlacePreview();
             }
@@ -201,7 +219,7 @@ namespace BallGame.Placement
 
         public void RotateSelected(float direction)
         {
-            if (!interactionEnabled)
+            if (!CanInteract)
             {
                 return;
             }
@@ -236,7 +254,7 @@ namespace BallGame.Placement
 
         public void DeleteSelected()
         {
-            if (!interactionEnabled || selected == null || !selected.CanEdit || selected.Definition == null || isSimulating)
+            if (!CanInteract || selected == null || !selected.CanEdit || selected.Definition == null || isSimulating)
             {
                 return;
             }
@@ -258,7 +276,7 @@ namespace BallGame.Placement
 
         public void ClearAllPlacedTools()
         {
-            if (isSimulating || !interactionEnabled || placedTools.Count == 0)
+            if (isSimulating || !CanInteract || placedTools.Count == 0)
             {
                 return;
             }
@@ -291,7 +309,7 @@ namespace BallGame.Placement
 
         public void MoveSelected(Vector2 screenDirection)
         {
-            if (!interactionEnabled || selected == null || !selected.CanEdit || selected.Definition == null || isSimulating || screenDirection.sqrMagnitude <= 0f)
+            if (!CanInteract || selected == null || !selected.CanEdit || selected.Definition == null || isSimulating || screenDirection.sqrMagnitude <= 0f)
             {
                 return;
             }
@@ -536,6 +554,7 @@ namespace BallGame.Placement
                 remaining[activeDefinition] = Mathf.Max(0, GetRemaining(activeDefinition) - 1);
             }
 
+            HintController?.NotifyPlacementCommitted(preview);
             Select(preview);
             preview = null;
             activeDefinition = null;
@@ -735,6 +754,7 @@ namespace BallGame.Placement
 
             draggedPlacedTool = tool;
             draggedOriginalPosition = tool.transform.position;
+            draggedOriginalRotation = tool.transform.rotation;
             draggedOriginalState = CaptureState();
             draggedPointerOffset = (Vector2)tool.transform.position - ScreenToWorld(screenPosition);
             Select(tool);
@@ -762,15 +782,18 @@ namespace BallGame.Placement
                 return;
             }
 
-            bool valid = keepIfValid && IsPlacementValidAfterSync(draggedPlacedTool);
-            bool changed = valid && draggedPlacedTool.transform.position != draggedOriginalPosition;
+            if (keepIfValid && IsBuildInteractionAvailable) HintController?.TrySnap(draggedPlacedTool);
+            bool valid = keepIfValid && IsBuildInteractionAvailable && IsPlacementValidAfterSync(draggedPlacedTool);
+            bool changed = valid && (draggedPlacedTool.transform.position != draggedOriginalPosition || draggedPlacedTool.transform.rotation != draggedOriginalRotation);
             if (!valid)
             {
                 draggedPlacedTool.transform.position = draggedOriginalPosition;
+                draggedPlacedTool.transform.rotation = draggedOriginalRotation;
                 Physics2D.SyncTransforms();
             }
 
             draggedPlacedTool.SetPreview(false, true);
+            if (valid) HintController?.NotifyPlacementCommitted(draggedPlacedTool);
             Select(draggedPlacedTool);
             draggedPlacedTool = null;
             if (changed && draggedOriginalState != null)

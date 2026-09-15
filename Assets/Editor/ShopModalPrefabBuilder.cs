@@ -69,6 +69,9 @@ namespace BallGame.Editor
                 BuildDetail(template, panel.transform);
                 CreateText(template, panel.transform, "Footer", "适度游戏，理性消费", new Vector2(0f, -422f), new Vector2(500f, 30f), 16f, TextAlignmentOptions.Center, new Color(0.39f, 0.34f, 0.27f, 0.55f));
 
+                var shopFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/LevelDesigner/Fonts/LXGWWenKai-Light Dynamic SDF.asset");
+                if (shopFont != null)
+                    foreach (var text in root.GetComponentsInChildren<TMP_Text>(true)) text.font = shopFont;
                 PrefabUtility.SaveAsPrefabAsset(root, ShopModalPath);
                 UnityEngine.Object.DestroyImmediate(root);
                 AssetDatabase.SaveAssets();
@@ -112,6 +115,12 @@ namespace BallGame.Editor
             if (label != null)
                 ConfigureText(label, Vector2.zero, Vector2.zero, 28f, TextAlignmentOptions.Center, Ink, true);
 
+            Button effects = CloneButton(template, sidebar.transform, "EffectsTab", "特效皮肤");
+            SetRect(effects.GetComponent<RectTransform>(), new Vector2(0f, 154f), new Vector2(182f, 72f));
+            SetButtonColors(effects, PaperLight, Gold);
+            TMP_Text effectsLabel = effects.GetComponentInChildren<TMP_Text>(true);
+            if (effectsLabel != null)
+                ConfigureText(effectsLabel, Vector2.zero, Vector2.zero, 26f, TextAlignmentOptions.Center, Ink, true);
             CreateText(template, sidebar.transform, "CategoryHint", "-", new Vector2(-66f, 244f), new Vector2(28f, 28f), 18f, TextAlignmentOptions.Center, new Color(0.73f, 0.47f, 0.18f, 1f));
         }
 

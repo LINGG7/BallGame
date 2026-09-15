@@ -20,3 +20,12 @@ MonoBehaviour:
     count: 1
   - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
     count: 1
+  placementHints:
+  - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+    position: {x: -6.79, y: -2.05, z: 0}
+    rotationDegrees: 330
+    snapRadius: 0.65
+    cameraPosition: {x: -6.79, y: -2.05}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2

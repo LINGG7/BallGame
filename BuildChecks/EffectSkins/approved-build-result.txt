@@ -1,0 +1,1 @@
+PASS: Created four effect prefabs, preview/material assets, catalog and shop tab. Unity reference validation passed.

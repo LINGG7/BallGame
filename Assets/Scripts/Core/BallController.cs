@@ -52,6 +52,7 @@ namespace BallGame.Core
 			//IL_001b: Unknown result type (might be due to invalid IL or missing references)
 			//IL_0020: Unknown result type (might be due to invalid IL or missing references)
 			base.Awake();
+            if (GetComponent<BallTrailEffect>() == null) gameObject.AddComponent<BallTrailEffect>();
 			dustEffect = ((Component)this).GetComponent<BallDustEffect>();
 			startPosition = ((Component)this).transform.position;
 			SetBuildMode();
@@ -166,6 +167,7 @@ namespace BallGame.Core
 		{
 			rollingContacts.Clear();
 			dustEffect?.StopEmission(clearParticles: true);
+            GetComponent<BallTrailEffect>()?.Clear();
 			StopRollingAudio();
 		}
 
@@ -184,6 +186,7 @@ namespace BallGame.Core
 			IsStoppedAtGoal = false;
 			rollingContacts.Clear();
 			dustEffect?.StopEmission(clearParticles: true);
+            GetComponent<BallTrailEffect>()?.Clear();
 			StopRollingAudio();
 			base.Body.bodyType = (RigidbodyType2D)1;
 			base.Body.simulated = true;
@@ -204,6 +207,7 @@ namespace BallGame.Core
 			IsStoppedAtGoal = true;
 			rollingContacts.Clear();
 			dustEffect?.StopEmission(clearParticles: true);
+            GetComponent<BallTrailEffect>()?.Clear();
 			StopRollingAudio();
 			base.Body.velocity = Vector2.zero;
 			base.Body.angularVelocity = 0f;

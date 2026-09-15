@@ -46,6 +46,9 @@ namespace BallGame.UI
 		private Button returnButton;
 
 		[SerializeField]
+		private Button helpButton;
+
+		[SerializeField]
 		private LevelIntroController levelIntro;
 
 		[SerializeField]
@@ -92,6 +95,19 @@ namespace BallGame.UI
 		public Button EditButton => editButton;
 
 		public Button NextButton => nextButton;
+
+        public Button HelpButton
+        {
+            get
+            {
+                if (helpButton == null)
+                {
+                    Transform help = transform.Find("Top Bar/Help") ?? transform.Find("TopBar/Help");
+                    if (help != null) helpButton = help.GetComponent<Button>();
+                }
+                return helpButton;
+            }
+        }
 
 		public Button ReturnButton
 		{

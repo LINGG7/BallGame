@@ -23,6 +23,40 @@ namespace BallGame.Core
         [SerializeField] private float simulationOrthographicSize = 5f;
         [SerializeField] private float simulationZoomSmoothTime = 0.1f;
 
+        private bool hintInputBlocked;
+        private bool hintFocusMoving;
+        private Vector3 hintFocusStart;
+        private Vector3 hintFocusTarget;
+        private float hintFocusStartedAt;
+        private float hintFocusDuration;
+        public bool IsHintFocusMoving => hintFocusMoving;
+
+        public void SetHintInputBlocked(bool blocked)
+        {
+            hintInputBlocked = blocked;
+            ResetPanState();
+            isSmoothingBuildZoom = false;
+            zoomVelocity = 0f;
+        }
+
+        public void BeginHintFocus(Vector2 position, float duration)
+        {
+            SetHintInputBlocked(true);
+            hintFocusStart = transform.position;
+            hintFocusTarget = ClampPosition(new Vector3(position.x, position.y, transform.position.z));
+            hintFocusStartedAt = Time.unscaledTime;
+            hintFocusDuration = Mathf.Max(0f, duration);
+            hintFocusMoving = true;
+        }
+
+        public void CancelHintFocus()
+        {
+            hintFocusMoving = false;
+            SetHintInputBlocked(false);
+            panTargetPosition = transform.position;
+            followVelocity = Vector3.zero;
+        }
+
         private Camera controlledCamera;
         private Vector3 followVelocity;
         private Vector3 panTargetPosition;
@@ -125,6 +159,7 @@ namespace BallGame.Core
 
         private void Update()
         {
+            if (hintInputBlocked) return;
             if (gameManager == null || gameManager.State != GameState.Build)
             {
                 ResetPanState();
@@ -142,6 +177,15 @@ namespace BallGame.Core
 
         private void LateUpdate()
         {
+            if (hintFocusMoving)
+            {
+                float t = hintFocusDuration <= 0f ? 1f : Mathf.Clamp01((Time.unscaledTime - hintFocusStartedAt) / hintFocusDuration);
+                transform.position = ClampPosition(Vector3.Lerp(hintFocusStart, hintFocusTarget, Mathf.SmoothStep(0f, 1f, t)));
+                panTargetPosition = transform.position;
+                if (t >= 1f) CancelHintFocus();
+                return;
+            }
+            if (hintInputBlocked) return;
             if (gameManager != null && gameManager.State == GameState.Build)
             {
                 ApplyBuildZoomDamping();

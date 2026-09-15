@@ -247,6 +247,7 @@ namespace BallGame.Tools
                 + (Vector2)exit.transform.up * exit.exitOffset;
             Vector3 currentPosition = body.transform.position;
             body.transform.position = new Vector3(target.x, target.y, currentPosition.z);
+            body.GetComponent<BallGame.Effects.BallTrailEffect>()?.Clear();
         }
 
         private static bool CanFinishTeleport(TeleportState state, PortalTool exit)
