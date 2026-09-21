@@ -1,43 +1,51 @@
-# 激励广告辅助放置
+# 一次广告开启一组辅助放置
 
-## 接入关卡（编辑器配置）
+## 配置与旧数据
 
-1. 游戏启动时，GameManager 自动将提示功能绑定到 GameHud 现有的 **Top Bar/Help** 按钮，自动补齐缺失的提示控制器。无需逐关运行设置菜单，也不创建新按钮。
-2. 选择 GameManager 的 Level 资产，在 **Placement Hints** 中按顺序填写目标。
-   - `tool`：与库存和已放置道具使用同一个 ToolDefinition。
-   - `position`、`rotationDegrees`：道具根物体的世界位置、Z 轴角度。
-   - `snapRadius`：松手吸附距离，默认 0.65 世界单位。
-   - `cameraPosition`：相机要观察的世界 XY 坐标；建议先与目标位置一致。
-   - `cameraMoveDuration`：镜头移动时长，默认 0.6 秒；0 表示直接聚焦。
-   - `positionTolerance` / `rotationTolerance`：判定已经正确放置的容差，默认 0.05 单位 / 2 度。
-3. 也可以在场景或 Play Mode 中选中一个已经摆好的 PlaceableTool，执行 **Append Selected Tool As Target**。每次追加一个目标，保存 Level 资产；录入时使用道具默认尺寸，位置和旋转会记录，缩放不会记录。
+在关卡 GameManager 的 LevelDefinition 资产中编辑 **Placement Hint Groups**：每项填写组名 `groupName`，在 `targets` 中按引导顺序添加多个目标。目标继续配置 ToolDefinition、世界位置、Z 轴角度、吸附半径、镜头位置/移动时长和正确放置容差。
 
-目前没有答案位置数据，提示列表不预填猜测数据。配置至少一个有效目标后，现有 Help 按钮即可用于测试。Set Up Current Scene 菜单已移除；Append Selected Tool As Target 菜单继续保留。
+已有 `placementHints` 数据不会被自动改写。没有新组配置时，每个旧目标仍独立算一组，维持原广告次数。Inspector 的 **转换旧配置为分组** 会完整复制旧参数，每项生成一个组；随后可手动合并、调整顺序。转换支持 Undo，保存资产后生效。
 
-## 模拟广告与正式接入
+新组非空时只使用新组配置。清空全部新组会重新使用保留的旧数据；若想彻底关闭旧提示，应明确调整旧数据，而不是误以为它已被删除。
 
-- 自动绑定优先保留控制器已有的广告 Provider；没有指定时复用同物体上的 Provider，再按构建环境补齐。Unity Editor / Development Build 默认添加 MockHintAdProvider，正式 Player 默认添加 LegacyHintAdAdapter。
-- 默认 1 秒后返回 Rewarded；可在 Inspector 修改结果为 Cancelled / Failed。
-- 开启 Manual Completion 后，使用组件右键菜单 Complete Mock 的三个入口手动回调。
-- 正式 Player 中模拟广告不可用，不会默认发放奖励。
-- 真实 SDK 可继承 HintRewardedAdProvider，实现 IsAvailable / Show，必须在 Unity 主线程确认奖励后回调 HintAdResult.Rewarded。取消和失败分别返回对应结果。
-- LegacyHintAdAdapter 可复用现有 BallSkinService.RewardedAdService；旧接口只有 bool，false 映射为 Failed。替换控制器的 Ad Provider 引用即可。
-- 120 秒无回调会恢复按钮；重复和迟到回调被忽略。重开、重新加载或禁用控制器会清理提示。
+## 多选录入
 
-## 行为
+1. 在 Hierarchy 中选中一个或多个场景道具，也可选择其子物体。
+2. 执行 **Ball Game → Placement Hints → Append Selected Tool As Target**。
+3. 在窗口中选择已有组，或输入组名新建组，点击“记录目标”。
 
-- 按顺序查找未正确放置、且存在可用库存或可移动匹配实例的目标。
-- 一次广告只开启一个提示；错误道具、范围外松手或目标被障碍物占据不会消耗提示。
-- 精灵虚影没有碰撞、物理和道具脚本。新放置和已有道具移动均复用原有碰撞校验和撤销流程。
-- 吸附仅对齐位置与旋转，成功后仍能移动。再次移走或撤销后，该位置可再次成为广告提示目标。
-- 广告等待与镜头移动时阻止道具操作；镜头完成后恢复操作并停留。
-- 模拟运行时隐藏未完成虚影；返回建造（包括自动失败重置）清除提示，不跨重开保存。
-- 预设点应由设计者验证可以正常放置。特定道具尺寸变化或自定义渲染需要额外适配；当前虚影针对现有 SpriteRenderer 道具。
+录入按 Hierarchy 顺序进行；同一道具的重复选择会合并，同组内相同道具类型、位置和角度的目标会跳过。位置以打开窗口时为准，不记录缩放。Fan 等未填 Definition 的预制体实例会通过预制体关联查找 ToolDefinition；匹配不唯一时需要明确指定。
+
+首次录入新分组时，会先把旧目标按每项一组保留，录入与转换作为一次可撤销编辑。菜单只修改所选关卡定义；不修改场景道具或预制体。
+
+## 游戏流程
+
+- 游戏自动绑定现有 GameHud/Top Bar/Help；按钮原文字不改变。
+- 一次成功广告开启首个未完成组。组内依次显示单个虚影、移动镜头，无需额外广告。
+- 当前目标仍未完成时保持引导；完成后选择本组首个未完成目标，自动跳过已正确放置项。
+- 本组所有目标必须同时满足位置和旋转要求才结束。重复类型道具采用最大一对一匹配，一个实例不能满足多个目标。
+- 移走、旋转、删除或撤销完成项后，会重新纳入本组引导；不会在拖动中途切换目标或抢镜头。
+- 完成整组后再移动道具，需要重新看广告才能再次开启该组。
+- 镜头移动时暂时锁定摆放，移动结束后恢复操作。沿用当前虚影呼吸光和上方操作文字。
+- 空组、错误配置或道具总数量不足时，不播放广告，状态栏显示原因。预设位置还需设计者确认能通过正常碰撞校验。
+
+## 试运行与重开
+
+试运行期间隐藏虚影，不更新完成状态。ResetToBuild（包括失败后返回摆放）保留广告获得的组，在恢复道具和镜头后继续引导。
+
+RetryLevelAndClearTools、重新载入关卡、离开场景或禁用控制器清除本次辅助。没有跨关卡或应用重启存档。
+
+## 广告
+
+已绑定 Provider 优先复用；Editor / Development Build 默认使用 MockHintAdProvider，正式 Player 默认使用 LegacyHintAdAdapter。模拟 Provider 在正式构建中不可用。
+
+Mock 默认一秒成功，可选择 Cancelled / Failed；开启 Manual Completion 后使用组件右键菜单完成回调。真实 SDK 适配必须在 Unity 主线程确认奖励后回调。重复、迟到、超时与重开后的回调受版本检查保护。
 
 ## 验证
 
-运行 `pwsh -File BuildChecks/PlacementHints/Validate.ps1` 使用本机 Unity 编译器验证全部运行时代码、非开发 Player 分支及新增编辑器/测试代码。输出仅写入本目录，不启动 Unity、不创建临时 Unity 项目、不清理目录。
+- `pwsh -File BuildChecks/PlacementHints/Validate.ps1`：运行时、正式构建分支、编辑器工具与隔离测试程序集编译。
+- `dotnet run --project BuildChecks/PlacementHints/MatchingChecks/MatchingChecks.csproj`：编译真实 PlacementHintGroup 源码，使用边界替身，将 3000 个匹配图与穷举结果比较，并检查数量/配置验证。已通过 16669 个断言。此项不代替 Unity 物理或场景测试。
+- Unity 菜单 **Ball Game → Placement Hints → Run Placement Tests**：执行 PlacementHintTests 和 PlacementHistoryTests，结果写入 `BuildChecks/PlacementHints/unity-tests.log`。也可在 Test Runner 中运行这两个 EditMode 测试类。
+- 新增回归覆盖整组连续放置、撤销/移走后的重访、最大一对一匹配、库存不足、试运行恢复、真正重开、旧配置转换及多选 Fan 录入。
 
-Unity Test Runner 的 EditMode 中运行 **PlacementHintTests** 和已有 **PlacementHistoryTests**。新增测试覆盖：奖励去重、取消/失败、重开与迟到回调、无效配置、顺序跳过、错误道具、范围外松手、碰撞拒绝、库存撤销、旋转吸附撤销、相机与虚影、输入锁、超时和禁用清理。
-
-本次已执行编译检查。编辑器自动操作工具无法启动，因此尚未执行 Unity 行为测试或场景视觉验收；需要在 Unity 中运行测试并在配置后的关卡检查 Help 按钮、虚影显示与镜头移动。
+当前编译和独立算法检查通过；原项目 Unity 编辑器尚未导入新脚本，自动操作工具无法启动，因此 Unity 行为测试和场景视觉验收尚未完成。待 Unity 完成编译后运行上述菜单，再检查连续镜头引导、光效和文字位置。

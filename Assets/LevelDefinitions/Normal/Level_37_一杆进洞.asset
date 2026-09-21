@@ -20,3 +20,25 @@ MonoBehaviour:
     count: 1
   - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
     count: 1
+  placementHints: []
+  placementHintGroups:
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+      position: {x: -2.8, y: -0.02, z: 0}
+      rotationDegrees: 345
+      snapRadius: 0.65
+      cameraPosition: {x: -2.8, y: -0.02}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+      position: {x: 0.49, y: 0.88, z: 0}
+      rotationDegrees: 74.99999
+      snapRadius: 0.65
+      cameraPosition: {x: 0.49, y: 0.88}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2

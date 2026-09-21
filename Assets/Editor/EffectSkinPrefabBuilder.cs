@@ -146,37 +146,9 @@ namespace BallGame.Editor
 
         private static Sprite CreatePreview(int style)
         {
-            const int size = 128;
+            const int size = 256;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = Ids[style] + "_Preview" };
-            var pixels = new Color[size * size];
-            for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
-            {
-                float u = x / 127f;
-                float center = 0.38f + 0.18f * Mathf.Sin(u * Mathf.PI);
-                float distance = Mathf.Abs(y / 127f - center);
-                float alpha = Mathf.Clamp01(1f - distance / Mathf.Lerp(0.01f, 0.09f, u)) * u;
-                float ballDistance = Vector2.Distance(new Vector2(u, y / 127f), new Vector2(0.84f, 0.47f));
-                alpha = Mathf.Max(alpha, Mathf.Clamp01((0.12f - ballDistance) * 90f));
-                if (style > 0)
-                {
-                    for (int n = 0; n < 5; n++)
-                    {
-                        float px = 0.18f + n * 0.125f;
-                        float py = 0.57f + (n % 2 == 0 ? 0.12f : -0.27f);
-                        float dx = Mathf.Abs(u - px);
-                        float dy = Mathf.Abs(y / 127f - py);
-                        float d = style == 3 ? Mathf.Sqrt(dx * dy) + (dx + dy) * 0.16f
-                            : style == 2 ? dx + dy : Mathf.Sqrt(dx * dx * 2f + dy * dy);
-                        alpha = Mathf.Max(alpha, Mathf.Clamp01((0.036f - d) * 140f));
-                    }
-                }
-                Color color = Color.Lerp(Colors[style], Color.white, ballDistance < 0.12f ? 0.65f : 0.1f);
-                color.a = alpha;
-                pixels[y * size + x] = color;
-            }
-            texture.SetPixels(pixels);
-            texture.Apply();
+            PaintPreview(texture, style);
             string path = OutputFolder + "/" + Ids[style] + "_Preview.asset";
             AssetDatabase.CreateAsset(texture, path);
             var sprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
@@ -186,6 +158,79 @@ namespace BallGame.Editor
             return sprite;
         }
 
+        private static void PaintPreview(Texture2D texture, int style)
+        {
+            int size = texture.width;
+            var pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = x / (float)(size - 1);
+                float t = Mathf.Clamp01((u - 0.08f) / 0.78f);
+                float center = 0.46f + 0.12f * Mathf.Sin(t * Mathf.PI);
+                float distance = Mathf.Abs(y / (float)(size - 1) - center);
+                float alpha = u < 0.08f || u > 0.86f ? 0f : Mathf.Clamp01(1f - distance / Mathf.Lerp(0.005f, 0.045f, t)) * Mathf.Lerp(0.12f, 0.95f, t);
+                if (style > 0)
+                {
+                    for (int n = 0; n < 6; n++)
+                    {
+                        float particleT = 0.23f + n * 0.105f;
+                        float px = 0.08f + particleT * 0.78f;
+                        float py = 0.46f + Mathf.Sin(particleT * Mathf.PI) * 0.12f + (n % 2 == 0 ? 0.12f : -0.12f);
+                        float dx = Mathf.Abs(u - px);
+                        float dy = Mathf.Abs(y / (float)(size - 1) - py);
+                        float d = style == 3 ? Mathf.Sqrt(dx * dy) + (dx + dy) * 0.16f
+                            : style == 2 ? dx + dy : Mathf.Sqrt(dx * dx * 2f + dy * dy);
+                        alpha = Mathf.Max(alpha, Mathf.Clamp01((0.036f - d) * 140f));
+                    }
+                }
+                Color color = Color.Lerp(Colors[style], Color.white, 0.1f);
+                color.a = alpha;
+                pixels[y * size + x] = color;
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+        }
+
+        // Keep existing texture and Sprite IDs so catalog references remain intact.
+        public static void RegenerateBallFreePreviews()
+        {
+            var textures = new Texture2D[Ids.Length];
+            for (int i = 0; i < Ids.Length; i++)
+            {
+                string path = OutputFolder + "/" + Ids[i] + "_Preview.asset";
+                CheckPath(path);
+                textures[i] = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (textures[i] == null || !textures[i].isReadable)
+                    throw new InvalidOperationException("Missing or unreadable preview: " + path);
+            }
+            Directory.CreateDirectory("BuildChecks/BallFreePreviews");
+            for (int i = 0; i < Ids.Length; i++)
+            {
+                var texture = textures[i];
+                string path = OutputFolder + "/" + Ids[i] + "_Preview.asset";
+                var catalog = AssetDatabase.LoadAssetAtPath<BallSkinCatalog>(CatalogPath);
+                var icon = catalog.Find(Ids[i]).previewSprite;
+                if (icon == null || AssetDatabase.GetAssetPath(icon) != path)
+                    throw new InvalidOperationException("Unexpected preview reference: " + path);
+                if (!texture.Reinitialize(256, 256, TextureFormat.RGBA32, false))
+                    throw new InvalidOperationException("Cannot resize preview: " + path);
+                PaintPreview(texture, i);
+                var resizedIcon = Sprite.Create(texture, new Rect(0, 0, 256, 256), new Vector2(0.5f, 0.5f), 100f);
+                resizedIcon.name = icon.name;
+                try { EditorUtility.CopySerialized(resizedIcon, icon); }
+                finally { UnityEngine.Object.DestroyImmediate(resizedIcon); }
+                EditorUtility.SetDirty(icon);
+                AssetDatabase.SaveAssetIfDirty(icon);
+                if (icon.rect.width != 256 || icon.rect.height != 256 || icon.texture != texture)
+                    throw new InvalidOperationException("Invalid resized sprite: " + path);
+                EditorUtility.SetDirty(textures[i]);
+                AssetDatabase.SaveAssetIfDirty(textures[i]);
+                File.WriteAllBytes("BuildChecks/BallFreePreviews/" + Ids[i] + ".png", textures[i].EncodeToPNG());
+            }
+            EffectSkinVisualCheck.RenderShopPages();
+            File.WriteAllText("BuildChecks/BallFreePreviews/result.txt", "PASS: four previews and Sprite rectangles unified to 256x256 without ball; framing aligned; shop pages checked.");
+        }
         private static void AddShopTab()
         {
             var root = PrefabUtility.LoadPrefabContents(ShopPath);
@@ -215,7 +260,7 @@ namespace BallGame.Editor
         public static void ValidateAssets()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<BallSkinCatalog>(CatalogPath);
-            if (catalog == null || catalog.Skins.Count != 4 || catalog.DefaultSkinId != "basic")
+            if (catalog == null || catalog.Skins.Count < 4 || catalog.DefaultSkinId != "basic")
                 throw new InvalidOperationException("Effect catalog is incomplete.");
             foreach (var entry in catalog.Skins)
             {

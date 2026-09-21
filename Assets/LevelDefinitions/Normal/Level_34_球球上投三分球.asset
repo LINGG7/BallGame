@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b8a8999e767bf94191264ce44bd7e28, type: 3}
   m_Name: "Level_34_\u7403\u7403\u4E0A\u6295\u4E09\u5206\u7403"
   m_EditorClassIdentifier: 
-  levelTitle: "\u7403\u7403\u4E0A\u6295"
+  levelTitle: "\u7403\u7403\u4E0A\u6295\u4E09\u5206\u7403"
   mode: 0
   toolCatalog: {fileID: 0}
   tools:
@@ -20,3 +20,45 @@ MonoBehaviour:
     count: 2
   - tool: {fileID: 11400000, guid: 04d1495afc2f43d4bb5fb6c94a019c29, type: 2}
     count: 2
+  placementHints: []
+  placementHintGroups:
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+      position: {x: 11.592, y: 2.006, z: 0}
+      rotationDegrees: 345
+      snapRadius: 0.65
+      cameraPosition: {x: 11.592, y: 2.006}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 04d1495afc2f43d4bb5fb6c94a019c29, type: 2}
+      position: {x: 14.62, y: 6.44, z: 0}
+      rotationDegrees: 0
+      snapRadius: 0.65
+      cameraPosition: {x: 14.62, y: 6.44}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 04d1495afc2f43d4bb5fb6c94a019c29, type: 2}
+      position: {x: 21.78, y: 11.83, z: 0}
+      rotationDegrees: 0
+      snapRadius: 0.65
+      cameraPosition: {x: 21.78, y: 11.83}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+      position: {x: 38.82, y: 9.05, z: 0}
+      rotationDegrees: 330
+      snapRadius: 0.65
+      cameraPosition: {x: 38.82, y: 9.05}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2

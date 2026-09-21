@@ -58,6 +58,7 @@ namespace BallGame.Core
         public LevelCompletionResult CurrentCompletionResult => currentCompletionResult;
         public event Action<GameState> StateChanged;
         public event Action LevelResetting;
+        public event Action BuildRestored;
         public LevelDefinition CurrentLevel => level;
 
         private void Awake()
@@ -293,7 +294,6 @@ namespace BallGame.Core
 
         public void ResetToBuild()
         {
-            LevelResetting?.Invoke();
             CancelPendingFailureReset();
             if (level == null || State == GameState.Intro)
             {
@@ -318,10 +318,12 @@ namespace BallGame.Core
             cameraController?.ClearSimulationTargets();
             cameraController?.FocusOnBall(false);
             RefreshUi();
+            BuildRestored?.Invoke();
         }
 
         public void RetryLevelAndClearTools()
         {
+            LevelResetting?.Invoke();
             ResetToBuild();
             placementManager?.ClearAllPlacedTools();
         }

@@ -24,3 +24,93 @@ MonoBehaviour:
     count: 1
   - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
     count: 4
+  placementHints: []
+  placementHintGroups:
+  - groupName: 1
+    targets:
+    - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
+      position: {x: -6.0939517, y: 3.174281, z: 0}
+      rotationDegrees: 0
+      snapRadius: 0.65
+      cameraPosition: {x: -6.0939517, y: 3.174281}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+    - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
+      position: {x: -6.557826, y: 4.372641, z: 0}
+      rotationDegrees: 0
+      snapRadius: 0.65
+      cameraPosition: {x: -6.557826, y: 4.372641}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+    - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
+      position: {x: -5.9443297, y: 5.534, z: 0}
+      rotationDegrees: 0
+      snapRadius: 0.65
+      cameraPosition: {x: -5.9443297, y: 5.534}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: 2
+    targets:
+    - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+      position: {x: 0.327, y: 3.825, z: 0}
+      rotationDegrees: 14.999995
+      snapRadius: 0.65
+      cameraPosition: {x: 0.327, y: 3.825}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+    - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+      position: {x: 2.181, y: 4.322, z: 0}
+      rotationDegrees: 14.999995
+      snapRadius: 0.65
+      cameraPosition: {x: 2.181, y: 4.322}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+    - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+      position: {x: 4.119, y: 4.828, z: 0}
+      rotationDegrees: 14.999995
+      snapRadius: 0.65
+      cameraPosition: {x: 4.119, y: 4.828}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+    - tool: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
+      position: {x: 7.38, y: 5.34, z: 0}
+      rotationDegrees: 14.999995
+      snapRadius: 0.65
+      cameraPosition: {x: 7.38, y: 5.34}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+    - tool: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
+      position: {x: 10.89, y: 6.23, z: 0}
+      rotationDegrees: 14.999995
+      snapRadius: 0.65
+      cameraPosition: {x: 10.89, y: 6.23}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: 3
+    targets:
+    - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
+      position: {x: 14.171, y: 6.06, z: 0}
+      rotationDegrees: 0
+      snapRadius: 0.65
+      cameraPosition: {x: 14.171, y: 6.06}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: 4
+    targets:
+    - tool: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
+      position: {x: 14.139787, y: 11.338248, z: 0}
+      rotationDegrees: 0
+      snapRadius: 0.65
+      cameraPosition: {x: 14.139787, y: 11.338248}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2

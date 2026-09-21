@@ -31,6 +31,25 @@ namespace BallGame.Core
 
 		public IReadOnlyList<BallGame.Placement.PlacementHintTarget> PlacementHints => placementHints;
 
+        [SerializeField] private List<BallGame.Placement.PlacementHintGroup> placementHintGroups = new List<BallGame.Placement.PlacementHintGroup>();
+        public IReadOnlyList<BallGame.Placement.PlacementHintGroup> PlacementHintGroups => placementHintGroups;
+
+        public IEnumerable<BallGame.Placement.PlacementHintGroup> GetEffectivePlacementHintGroups()
+        {
+            if (placementHintGroups != null && placementHintGroups.Count > 0)
+            {
+                foreach (var group in placementHintGroups) yield return group;
+                yield break;
+            }
+            if (placementHints == null) yield break;
+            for (int i = 0; i < placementHints.Count; i++)
+                yield return new BallGame.Placement.PlacementHintGroup
+                {
+                    groupName = "旧提示 " + (i + 1),
+                    targets = new List<BallGame.Placement.PlacementHintTarget> { placementHints[i] }
+                };
+        }
+
 		public string LevelTitle => levelTitle;
 
 		public LevelMode Mode => mode;

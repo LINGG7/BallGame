@@ -22,3 +22,45 @@ MonoBehaviour:
     count: 2
   - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
     count: 1
+  placementHints: []
+  placementHintGroups:
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+      position: {x: -2.17, y: -2.71, z: 0}
+      rotationDegrees: 60.000004
+      snapRadius: 0.65
+      cameraPosition: {x: -2.17, y: -2.71}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+      position: {x: 4.97, y: 0.48, z: 0}
+      rotationDegrees: 60.000004
+      snapRadius: 0.65
+      cameraPosition: {x: 4.97, y: 0.48}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+      position: {x: 26.674, y: 10.309, z: 0}
+      rotationDegrees: 165
+      snapRadius: 0.65
+      cameraPosition: {x: 26.674, y: 10.309}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+      position: {x: 24.368, y: 10.42, z: 0}
+      rotationDegrees: 315
+      snapRadius: 0.65
+      cameraPosition: {x: 24.368, y: 10.42}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2

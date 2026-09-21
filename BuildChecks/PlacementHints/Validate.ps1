@@ -42,6 +42,9 @@ $editorArgs = $common + @('/define:' + $defines, '/out:"' + (Join-Path $outputRo
 $editorArgs += @(Get-References 'Assembly-CSharp-Editor.csproj')
 $editorArgs += @('/reference:"' + $runtimeDll + '"', '/reference:"' + $nunit.FullName + '"')
 $editorArgs += @('"' + (Join-Path $projectRoot 'Assets/Editor/PlacementHintSetup.cs') + '"', '"' + (Join-Path $projectRoot 'Assets/Tests/Editor/PlacementHintTests.cs') + '"')
+$editorArgs += '"' + (Join-Path $projectRoot 'Assets/Editor/PlacementHintGroupWindow.cs') + '"'
+$editorArgs += '"' + (Join-Path $projectRoot 'Assets/Editor/LevelDefinitionEditor.cs') + '"'
+$editorArgs += '"' + (Join-Path $projectRoot 'Assets/Editor/PlacementHintTestRunner.cs') + '"'
 Compile 'editor-tests' $editorArgs
 # Compile this reflection-based test independently, without the runtime or TMP assembly.
 # The editor utility legitimately needs those references; the test asmdef does not have them.

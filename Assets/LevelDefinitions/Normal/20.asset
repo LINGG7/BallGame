@@ -20,3 +20,20 @@ MonoBehaviour:
     count: 1
   - tool: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
     count: 1
+  placementHints:
+  - tool: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
+    position: {x: -4.3385277, y: -2.1862993, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: -4.3385277, y: -2.1862993}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: e4bc92c76100466459d8f7a701e527e8, type: 2}
+    position: {x: -7.2770615, y: -3.9780881, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: -7.2770615, y: -3.9780881}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2

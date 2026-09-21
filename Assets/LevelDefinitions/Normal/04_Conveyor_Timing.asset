@@ -18,3 +18,28 @@ MonoBehaviour:
   tools:
   - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
     count: 3
+  placementHints:
+  - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+    position: {x: -5.858197, y: -1.4664477, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: -5.858197, y: -1.4664477}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+    position: {x: -1.9702334, y: -0.46574828, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: -1.9702334, y: -0.46574828}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: a80f4512b7d6c5f42b175cb27640cfc3, type: 2}
+    position: {x: 2.032564, y: 0.48573643, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: 2.032564, y: 0.48573643}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2

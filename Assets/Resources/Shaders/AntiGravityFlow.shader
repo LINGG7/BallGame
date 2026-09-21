@@ -22,6 +22,8 @@ Shader "BallGame/Anti-Gravity Flow"
             "RenderType" = "Transparent"
             "PreviewType" = "Plane"
             "CanUseSpriteAtlas" = "True"
+            // Flow direction needs each renderer's original object-to-world matrix.
+            "DisableBatching" = "True"
         }
 
         Cull Off

@@ -187,7 +187,7 @@ namespace BallGame.UI
             var hint = panel.Find("CategorySidebar/CategoryHint") as RectTransform;
             if (hint != null) hint.anchoredPosition = new Vector2(hint.anchoredPosition.x, effectsCategory ? 154f : 244f);
             SetCategoryText(panel, "Content/SkinBanner/Headline", effectsCategory ? "特效皮肤收藏" : "球球皮肤收藏");
-            SetCategoryText(panel, "Content/SkinBanner/Subtitle", effectsCategory ? "基础光带免费，主题特效看广告永久解锁" : "换上喜欢的外观，开始新的挑战");
+            SetCategoryText(panel, "Content/SkinBanner/Subtitle", effectsCategory ? "选择喜欢的拖尾，让每次移动更精彩" : "换上喜欢的外观，开始新的挑战");
             SetCategoryText(panel, "Content/SectionTitle", effectsCategory ? "特效皮肤" : "皮肤商品");
             SetCategoryText(panel, "SkinDetail/DetailTitle", effectsCategory ? "特效预览" : "皮肤预览");
             var banner = panel.Find("Content/SkinBanner/BannerPreview")?.GetComponent<Image>();
@@ -278,7 +278,22 @@ namespace BallGame.UI
             {
                 float viewportWidth = cardArea.GetComponent<RectTransform>().rect.width;
                 cardContent.sizeDelta = new Vector2(viewportWidth * pageCount, cardContent.sizeDelta.y);
-                LayoutRebuilder.ForceRebuildLayoutImmediate(cardContent);
+                // Position cards per page: a continuous horizontal layout drifts by
+                // its inter-page spacing and clips the first card on later pages.
+                var layout = cardContent.GetComponent<HorizontalLayoutGroup>();
+                int left = layout != null ? layout.padding.left : 10;
+                int right = layout != null ? layout.padding.right : 10;
+                int top = layout != null ? layout.padding.top : 12;
+                if (layout != null) layout.enabled = false;
+                float cardWidth = cardTemplate.GetComponent<RectTransform>().rect.width;
+                float spacing = Mathf.Max(0f, (viewportWidth - left - right - CardsPerPage * cardWidth) / (CardsPerPage - 1));
+                for (int i = 0; i < cardButtons.Count; i++)
+                {
+                    var rect = cardButtons[i].GetComponent<RectTransform>();
+                    rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+                    rect.anchoredPosition = new Vector2((i / CardsPerPage) * viewportWidth
+                        + left + (i % CardsPerPage) * (cardWidth + spacing), -top);
+                }
             }
         }
 

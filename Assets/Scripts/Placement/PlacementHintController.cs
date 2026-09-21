@@ -18,9 +18,14 @@ namespace BallGame.Placement
         [SerializeField] private TMP_Text hintLabel;
         [SerializeField, Min(1f)] private float adTimeout = 120f;
 
+        private PlacementHintGroup activeGroup;
         private PlacementHintTarget activeTarget;
+        private bool needsReevaluation;
+        private bool awaitingBuildRestore;
+        private bool refocusAfterRestore;
+        private string configurationError;
+        public PlacementHintGroup ActiveGroup => activeGroup;
         private PlacementHintGhost ghost;
-        private PlaceableTool snappedCandidate;
         private int requestVersion;
         private float requestStartedAt;
         private string feedback;
@@ -73,14 +78,20 @@ namespace BallGame.Placement
         {
             if (gameManager != null)
             {
+                gameManager.BuildRestored -= OnBuildRestored;
                 gameManager.LevelResetting -= ClearHint;
                 gameManager.StateChanged -= OnGameStateChanged;
+                gameManager.BuildRestored += OnBuildRestored;
                 gameManager.LevelResetting += ClearHint;
                 gameManager.StateChanged += OnGameStateChanged;
             }
             if (placementManager != null)
             {
+                placementManager.HistoryChanged -= MarkDirty;
+                placementManager.InventoryChanged -= MarkDirty;
                 placementManager.LevelResetting -= ClearHint;
+                placementManager.HistoryChanged += MarkDirty;
+                placementManager.InventoryChanged += MarkDirty;
                 placementManager.LevelResetting += ClearHint;
                 placementManager.HintController = this;
             }
@@ -95,11 +106,14 @@ namespace BallGame.Placement
         {
             if (gameManager != null)
             {
+                gameManager.BuildRestored -= OnBuildRestored;
                 gameManager.LevelResetting -= ClearHint;
                 gameManager.StateChanged -= OnGameStateChanged;
             }
             if (placementManager != null)
             {
+                placementManager.HistoryChanged -= MarkDirty;
+                placementManager.InventoryChanged -= MarkDirty;
                 placementManager.LevelResetting -= ClearHint;
                 if (placementManager.HintController == this) placementManager.HintController = null;
             }
@@ -128,7 +142,7 @@ namespace BallGame.Placement
             }
             if (State == HintState.Assisting)
             {
-                if (activeTarget == null || !activeTarget.IsValid || !DependenciesReady)
+                if (activeGroup == null || !DependenciesReady)
                 {
                     ClearHint();
                     ShowFeedback("提示配置不可用");
@@ -136,9 +150,10 @@ namespace BallGame.Placement
                 else
                 {
                     if (ownsInputBlock && !cameraController.IsHintFocusMoving) ReleaseInput();
+                    if (needsReevaluation) EvaluateActiveGroup();
                     if (ghost != null)
                     {
-                        ghost.gameObject.SetActive(IsBuild);
+                        ghost.gameObject.SetActive(IsBuild && !awaitingBuildRestore);
                         ghost.SetHighlighted(IsBuild && !ownsInputBlock && activeTarget.IsInRange(placementManager.DraggingTool));
                     }
                 }
@@ -146,37 +161,94 @@ namespace BallGame.Placement
             RefreshButton();
         }
 
-        // Ordered targets use the current committed placement, not persistent hint-consumption flags.
-        public PlacementHintTarget FindNextTarget()
+        private PlacementHintGroup FindNextGroup(out string error)
         {
+            error = null;
             if (gameManager == null || placementManager == null || gameManager.CurrentLevel == null) return null;
-            foreach (var target in gameManager.CurrentLevel.PlacementHints)
+            foreach (var group in gameManager.CurrentLevel.GetEffectivePlacementHintGroups())
             {
-                if (target == null || !target.IsValid) continue;
-                bool satisfied = false;
-                bool movableMatchingTool = false;
-                foreach (var placed in placementManager.PlacedTools)
-                {
-                    if (target.IsSatisfiedBy(placed)) { satisfied = true; break; }
-                    if (placed != null && placed.CanEdit && placed.Definition == target.tool) movableMatchingTool = true;
-                }
-                if (satisfied) continue;
-                if (!placementManager.CanPlace(target.tool) && !movableMatchingTool) continue;
-                // A visual-only ghost requires a visible sprite in the configured prefab.
-                foreach (var sprite in target.tool.Prefab.GetComponentsInChildren<SpriteRenderer>())
-                    if (sprite.enabled && sprite.sprite != null) return target;
+                if (group == null) { error = "提示组配置不可用"; return null; }
+                if (!group.Validate(out error)) return null;
+                var matches = group.MatchTargets(placementManager.PlacedTools);
+                if (Array.IndexOf(matches, -1) < 0) continue;
+                if (!group.HasEnoughTools(placementManager, out error)) return null;
+                return group;
             }
             return null;
+        }
+
+        // Retained for callers that only need the next visible target.
+        public PlacementHintTarget FindNextTarget()
+        {
+            var group = FindNextGroup(out _);
+            if (group == null) return null;
+            int index = Array.IndexOf(group.MatchTargets(placementManager.PlacedTools), -1);
+            return index >= 0 ? group.targets[index] : null;
+        }
+
+        private void MarkDirty() => needsReevaluation = true;
+
+        private void OnBuildRestored()
+        {
+            awaitingBuildRestore = false;
+            refocusAfterRestore = true;
+            needsReevaluation = true;
+            EvaluateActiveGroup();
+        }
+
+        private void EvaluateActiveGroup()
+        {
+            if (State != HintState.Assisting || !IsBuild || awaitingBuildRestore || !DependenciesReady
+                || placementManager.DraggingTool != null || cameraController.IsHintFocusMoving) return;
+            needsReevaluation = false;
+            if (activeGroup == null || !activeGroup.Validate(out _))
+            {
+                ClearHint();
+                ShowFeedback("提示组配置不可用");
+                return;
+            }
+            var matches = activeGroup.MatchTargets(placementManager.PlacedTools);
+            int firstMissing = Array.IndexOf(matches, -1);
+            if (firstMissing < 0)
+            {
+                ClearHint();
+                ShowFeedback("本组辅助放置完成");
+                return;
+            }
+            int current = activeGroup.targets.IndexOf(activeTarget);
+            var next = current >= 0 && matches[current] < 0 ? activeTarget : activeGroup.targets[firstMissing];
+            bool changed = next != activeTarget || ghost == null;
+            if (changed)
+            {
+                DestroyGhost();
+                activeTarget = next;
+                ghost = PlacementHintGhost.Create(next, hintLabel != null ? hintLabel.font : null);
+            }
+            if (changed || refocusAfterRestore)
+            {
+                refocusAfterRestore = false;
+                BlockInput();
+                cameraController.BeginHintFocus(next.cameraPosition, next.cameraMoveDuration);
+            }
+        }
+
+        private void DestroyGhost()
+        {
+            if (ghost == null) return;
+            ghost.gameObject.SetActive(false);
+            if (Application.isPlaying) Destroy(ghost.gameObject);
+            else DestroyImmediate(ghost.gameObject);
+            ghost = null;
         }
 
         public void RequestHint()
         {
             if (!isActiveAndEnabled || State != HintState.Idle || !IsBuild || !DependenciesReady
                 || !placementManager.IsBuildInteractionAvailable || placementManager.DraggingTool != null) return;
-            var target = FindNextTarget();
-            if (target == null) { ShowFeedback("无需提示或配置不可用"); return; }
+            var group = FindNextGroup(out string error);
+            if (group == null) { ShowFeedback(error ?? "无需提示"); return; }
             if (adProvider == null || !adProvider.IsAvailable) { ShowFeedback("广告暂不可用"); return; }
-            activeTarget = target;
+            activeGroup = group;
             State = HintState.WaitingForAd;
             int version = ++requestVersion;
             var level = gameManager.CurrentLevel;
@@ -193,15 +265,15 @@ namespace BallGame.Placement
                         || State != HintState.WaitingForAd || gameManager == null || gameManager.CurrentLevel != level) return;
                     // Invalidate before doing any work: duplicated SDK callbacks must not regrant.
                     ++requestVersion;
-                    if (result != HintAdResult.Rewarded || !IsBuild || !DependenciesReady || !target.IsValid)
+                    if (result != HintAdResult.Rewarded || !IsBuild || !DependenciesReady || !group.Validate(out _) || !group.HasEnoughTools(placementManager, out _))
                     {
                         ClearHint();
                         ShowFeedback(result == HintAdResult.Cancelled ? "广告已取消" : "广告未完成，请重试");
                         return;
                     }
                     State = HintState.Assisting;
-                    ghost = PlacementHintGhost.Create(target, hintLabel != null ? hintLabel.font : null);
-                    cameraController.BeginHintFocus(target.cameraPosition, target.cameraMoveDuration);
+                    needsReevaluation = true;
+                    EvaluateActiveGroup();
                     RefreshButton();
                 });
             }
@@ -216,19 +288,17 @@ namespace BallGame.Placement
         // Called only on pointer release before the existing collision/commit path.
         public bool TrySnap(PlaceableTool candidate)
         {
-            snappedCandidate = null;
             if (State != HintState.Assisting || !IsBuild || ownsInputBlock || activeTarget == null
                 || !activeTarget.IsValid || !activeTarget.IsInRange(candidate)) return false;
             candidate.transform.SetPositionAndRotation(activeTarget.position, activeTarget.Rotation);
-            snappedCandidate = candidate;
             return true;
         }
         public void NotifyPlacementCommitted(PlaceableTool candidate)
         {
-            if (State != HintState.Assisting || candidate == null || candidate != snappedCandidate
-                || activeTarget == null || !activeTarget.IsSatisfiedBy(candidate)) return;
-            ClearHint();
-            ShowFeedback("辅助放置完成");
+            if (State != HintState.Assisting || candidate == null) return;
+            needsReevaluation = true;
+            // PlacementManager calls this only after clearing transient drag references/history.
+            EvaluateActiveGroup();
         }
         public void ClearHint()
         {
@@ -236,14 +306,11 @@ namespace BallGame.Placement
             bool hadAd = State == HintState.WaitingForAd;
             State = HintState.Idle;
             activeTarget = null;
-            snappedCandidate = null;
-            if (ghost != null)
-            {
-                ghost.gameObject.SetActive(false);
-                if (Application.isPlaying) Destroy(ghost.gameObject);
-                else DestroyImmediate(ghost.gameObject);
-                ghost = null;
-            }
+            DestroyGhost();
+            activeGroup = null;
+            needsReevaluation = false;
+            awaitingBuildRestore = false;
+            refocusAfterRestore = false;
             ReleaseInput();
             if (hadAd && adProvider != null) adProvider.CancelPending();
             if (feedback != null) gameManager?.ShowPlacementHintFeedback(null);
@@ -268,7 +335,11 @@ namespace BallGame.Placement
             else if (state != GameState.Build)
             {
                 if (State == HintState.WaitingForAd) ClearHint();
-                else ReleaseInput();
+                else
+                {
+                    awaitingBuildRestore = true;
+                    ReleaseInput();
+                }
                 if (ghost != null) ghost.gameObject.SetActive(false);
             }
             RefreshButton();
@@ -283,7 +354,13 @@ namespace BallGame.Placement
         private void RefreshButton()
         {
             bool ready = IsBuild && DependenciesReady;
-            bool hasTarget = State == HintState.Idle && ready && FindNextTarget() != null;
+            string error = null;
+            bool hasTarget = State == HintState.Idle && ready && FindNextGroup(out error) != null;
+            if (State == HintState.Idle && ready && configurationError != error)
+            {
+                if (error != null || configurationError != null) gameManager.ShowPlacementHintFeedback(error);
+                configurationError = error;
+            }
             bool available = adProvider != null && adProvider.IsAvailable;
             if (hintButton != null) hintButton.interactable = isActiveAndEnabled && hasTarget
                 && available && placementManager.IsBuildInteractionAvailable && placementManager.DraggingTool == null;

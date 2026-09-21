@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b8a8999e767bf94191264ce44bd7e28, type: 3}
   m_Name: 13
   m_EditorClassIdentifier: 
-  levelTitle: "13 \u6C34\u57DF"
+  levelTitle: "13 \u843D\u5730\u6C34"
   mode: 0
   toolCatalog: {fileID: 11400000, guid: 7ba9939ce0a349af9384c351f8ab9103, type: 2}
   tools:
@@ -20,3 +20,20 @@ MonoBehaviour:
     count: 1
   - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
     count: 1
+  placementHints:
+  - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+    position: {x: -2.675, y: 3.37913, z: 0}
+    rotationDegrees: 270
+    snapRadius: 0.65
+    cameraPosition: {x: -2.675, y: 3.37913}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: 7444849728177284aa7e218d6d66f0b5, type: 2}
+    position: {x: -2.63, y: -2.45341, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: -2.63, y: -2.45341}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2

@@ -22,3 +22,44 @@ MonoBehaviour:
     count: 2
   - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
     count: 1
+  placementHints:
+  - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+    position: {x: -9.49, y: 2.63, z: 0}
+    rotationDegrees: 330
+    snapRadius: 0.65
+    cameraPosition: {x: -9.49, y: 2.63}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
+    position: {x: -4.158, y: 4.9, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: -4.158, y: 4.9}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+    position: {x: -1.765, y: 4.188, z: 0}
+    rotationDegrees: 44.999996
+    snapRadius: 0.65
+    cameraPosition: {x: -1.765, y: 4.188}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
+    position: {x: 2.09989, y: 5.6460075, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: 2.09989, y: 5.6460075}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+    position: {x: 4.8196397, y: 4.847, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: 4.8196397, y: 4.847}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2

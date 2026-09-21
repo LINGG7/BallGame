@@ -63,7 +63,7 @@ MonoBehaviour:
     levelDefinition: {fileID: 11400000, guid: 7b852fbaf58db9148b2a5a4f0a0ab8e8, type: 2}
   - levelNumber: 13
     sceneName: Level_13
-    displayTitle: "13 \u6C34\u57DF"
+    displayTitle: "13 \u843D\u5730\u6C34"
     levelDefinition: {fileID: 11400000, guid: 5dc4207a36866c64182cfcb1c02baa36, type: 2}
   - levelNumber: 14
     sceneName: Level_14
@@ -130,8 +130,8 @@ MonoBehaviour:
     displayTitle: "29 \u8FD9\u5173\u80FD\u8FC7\uFF1F"
     levelDefinition: {fileID: 11400000, guid: 80c2094ea02dc544d961f732b21e8fc1, type: 2}
   - levelNumber: 30
-    sceneName: "Level_30_\u5927\u6742\u70E9"
-    displayTitle: "30 \u5927\u6742\u70E9"
+    sceneName: "Level_30_\u82B1\u82B1\u4E16\u754C\u8FF7\u4EBA\u773C"
+    displayTitle: "30 \u82B1\u82B1\u4E16\u754C\u8FF7\u4EBA\u773C"
     levelDefinition: {fileID: 11400000, guid: 624a25cd0a602f44da034e401387c9be, type: 2}
   - levelNumber: 31
     sceneName: "Level_31_\u5C0F\u5FC3\uFF01\uFF01"
@@ -147,7 +147,7 @@ MonoBehaviour:
     levelDefinition: {fileID: 11400000, guid: cec6b2164dcd32847a01b2347cc2c042, type: 2}
   - levelNumber: 34
     sceneName: "Level_34_\u7403\u7403\u4E0A\u6295\u4E09\u5206\u7403"
-    displayTitle: "34 \u7403\u7403\u4E0A\u6295"
+    displayTitle: "34 \u7403\u7403\u4E0A\u6295\u4E09\u5206\u7403"
     levelDefinition: {fileID: 11400000, guid: 3fe442a27dcaf524396f490f6e6575aa, type: 2}
   - levelNumber: 35
     sceneName: "Level_35_\u8C01\u88C5\u7684\u51CF\u901F\u5E26\uFF01"

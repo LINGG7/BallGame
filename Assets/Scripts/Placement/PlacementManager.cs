@@ -554,13 +554,14 @@ namespace BallGame.Placement
                 remaining[activeDefinition] = Mathf.Max(0, GetRemaining(activeDefinition) - 1);
             }
 
-            HintController?.NotifyPlacementCommitted(preview);
+            PlaceableTool committed = preview;
             Select(preview);
             preview = null;
             activeDefinition = null;
             RecalculateCurrentCost();
             InventoryChanged?.Invoke();
             RecordOperation(originalState);
+            HintController?.NotifyPlacementCommitted(committed);
         }
 
         private bool IsPlacementValid(PlaceableTool tool)
@@ -793,7 +794,7 @@ namespace BallGame.Placement
             }
 
             draggedPlacedTool.SetPreview(false, true);
-            if (valid) HintController?.NotifyPlacementCommitted(draggedPlacedTool);
+            PlaceableTool committed = valid ? draggedPlacedTool : null;
             Select(draggedPlacedTool);
             draggedPlacedTool = null;
             if (changed && draggedOriginalState != null)
@@ -802,6 +803,7 @@ namespace BallGame.Placement
             }
 
             draggedOriginalState = null;
+            if (committed != null) HintController?.NotifyPlacementCommitted(committed);
         }
 
         private void SelectAt(Vector2 worldPosition)

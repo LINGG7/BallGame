@@ -22,6 +22,18 @@ namespace BallGame.Editor
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
+            const string ballFreeRequest = "BuildChecks/BallFreePreviews/create.request";
+            if (File.Exists(ballFreeRequest) && File.ReadAllText(ballFreeRequest).Trim() == "ball-free-256-v2")
+            {
+                File.WriteAllText(ballFreeRequest, "claimed");
+                try { EffectSkinPrefabBuilder.RegenerateBallFreePreviews(); }
+                catch (Exception error)
+                {
+                    File.WriteAllText("BuildChecks/BallFreePreviews/result.txt", error.ToString());
+                    Debug.LogException(error);
+                }
+                return;
+            }
             if (!File.Exists(RequestPath) || File.ReadAllText(RequestPath).Trim() != "render-v2") return;
             File.WriteAllText(RequestPath, "claimed");
             try
@@ -54,11 +66,11 @@ namespace BallGame.Editor
             }
             finally { PrefabUtility.UnloadPrefabContents(shopRoot); }
             EffectSkinPrefabBuilder.ValidateAssets();
-            RenderShop();
-            RenderTrails();
+            RenderShopPages();
+
         }
 
-        private static void RenderShop()
+        public static void RenderShopPages()
         {
             var preview = new PreviewRenderUtility();
             try
@@ -85,19 +97,37 @@ namespace BallGame.Editor
                 controller.Show();
                 var switchCategory = typeof(ShopPanelController).GetMethod("SwitchCategory", BindingFlags.Instance | BindingFlags.NonPublic);
                 switchCategory.Invoke(controller, new object[] { true });
-                AssertCardCount(root, 4);
+                AssertCardCount(root, EffectSkinService.Catalog.Skins.Count);
                 switchCategory.Invoke(controller, new object[] { false });
                 AssertCardCount(root, BallSkinService.Catalog.Skins.Count);
                 switchCategory.Invoke(controller, new object[] { true });
-                AssertCardCount(root, 4);
+                AssertCardCount(root, EffectSkinService.Catalog.Skins.Count);
                 var label = root.transform.Find("ShopModal/Panel/CategorySidebar/EffectsTab").GetComponentInChildren<TMP_Text>(true);
                 if (label.text != "特效皮肤") throw new Exception("Effect category label is incorrect.");
-                Capture(preview, 1920, 1080, DirectoryPath + "/shop-effects.png", () =>
+                int total = EffectSkinService.Catalog.Skins.Count;
+                int pages = Mathf.CeilToInt(total / 4f);
+                var controllerType = typeof(ShopPanelController);
+                if ((int)controllerType.GetField("pageCount", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(controller) != pages)
+                    throw new Exception("Shop page count is incorrect.");
+                for (int page = 0; page < pages; page++)
                 {
-                    Canvas.ForceUpdateCanvases();
-                    foreach (var text in root.GetComponentsInChildren<TMP_Text>(true)) text.ForceMeshUpdate(true);
-                    Canvas.ForceUpdateCanvases();
-                });
+                    controllerType.GetMethod("SelectCard", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, new object[] { page * 4 });
+                    controllerType.GetMethod("SetPageImmediate", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, new object[] { page });
+                    Capture(preview, 1920, 1080, DirectoryPath + "/shop-effects-page-" + (page+1) + ".png", () =>
+                    {
+                        Canvas.ForceUpdateCanvases();
+                        foreach (var text in root.GetComponentsInChildren<TMP_Text>(true)) text.ForceMeshUpdate(true);
+                        Canvas.ForceUpdateCanvases();
+                    });
+                    var content = root.transform.Find("ShopModal/Panel/Content/CardArea/CardContent") as RectTransform;
+                    var viewport = content.parent as RectTransform;
+                    var firstCard = content.Find("SkinCard_" + EffectSkinService.Catalog.Skins[page*4].id) as RectTransform;
+                    var corners = new Vector3[4];
+                    firstCard.GetWorldCorners(corners);
+                    if (viewport.InverseTransformPoint(corners[0]).x < viewport.rect.xMin - 0.5f
+                        || viewport.InverseTransformPoint(corners[2]).x > viewport.rect.xMax + 0.5f)
+                        throw new Exception("First card clipped on page " + (page+1));
+                }
                 var allLabels = root.GetComponentsInChildren<TMP_Text>(true);
                 foreach (var text in allLabels)
                     foreach (char character in text.text)

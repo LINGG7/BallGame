@@ -1,0 +1,2 @@
+PASS: six free themes created; original entries preserved; reference and shader checks passed.
+PASS: all catalog pages, card bounds and Chinese glyphs checked.

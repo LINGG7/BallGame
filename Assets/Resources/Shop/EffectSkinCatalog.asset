@@ -50,3 +50,57 @@ MonoBehaviour:
     featured: 0
     initiallyUnlocked: 0
     unlockType: 0
+  - id: lightning
+    displayName: "\u96F7\u7535"
+    previewSprite: {fileID: -1918259506226470972, guid: 37cc143cdc1eca24fac8dd04f6fc0a47, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 811279271303500578, guid: f37c37e40a6012d44825d7f6c4105707, type: 3}
+    sphereProjectionRadius: 1
+    featured: 0
+    initiallyUnlocked: 1
+    unlockType: 0
+  - id: rainbow
+    displayName: "\u5F69\u8679"
+    previewSprite: {fileID: 1637512052538831490, guid: c91fc4e85e4c1d540b213c1d976fa205, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 8041815378187221319, guid: ce48d641d1bcd08468309588de707aea, type: 3}
+    sphereProjectionRadius: 1
+    featured: 0
+    initiallyUnlocked: 1
+    unlockType: 0
+  - id: sakura
+    displayName: "\u6A31\u82B1"
+    previewSprite: {fileID: 8425442280842774167, guid: 2a2db5198a5d7ab4f8d59accd849f425, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 1281754193935787242, guid: 0db8bc85a4bb621409f18d18f919be9b, type: 3}
+    sphereProjectionRadius: 1
+    featured: 0
+    initiallyUnlocked: 1
+    unlockType: 0
+  - id: bubble
+    displayName: "\u6C34\u6CE1"
+    previewSprite: {fileID: -2869309113045547746, guid: 268bda565bc7ed84da3c0a6a19e90e99, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 2024084191695608502, guid: aef4e8c7424d87249bf0de4a40e62666, type: 3}
+    sphereProjectionRadius: 1
+    featured: 0
+    initiallyUnlocked: 1
+    unlockType: 0
+  - id: ink
+    displayName: "\u6C34\u58A8"
+    previewSprite: {fileID: -5128647553265572121, guid: d89f3b9b56f4c8b479b2705c16d92dc9, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 4710113149550244533, guid: 81e9fc7b69f00e94ebe44e6768cf0b88, type: 3}
+    sphereProjectionRadius: 1
+    featured: 0
+    initiallyUnlocked: 1
+    unlockType: 0
+  - id: music
+    displayName: "\u97F3\u7B26"
+    previewSprite: {fileID: 7866825057790082320, guid: 9bdad38f3d906ce42b79cc16ac29eef5, type: 2}
+    runtimeSprite: {fileID: 0}
+    effectPrefab: {fileID: 3313125083459698602, guid: a2e30dc3022db944ca8eb71917ca98a4, type: 3}
+    sphereProjectionRadius: 1
+    featured: 0
+    initiallyUnlocked: 1
+    unlockType: 0

@@ -1,0 +1,1 @@
+PASS: four previews and Sprite rectangles unified to 256x256 without ball; framing aligned; shop pages checked.

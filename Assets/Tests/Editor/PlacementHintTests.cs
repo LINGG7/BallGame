@@ -313,6 +313,230 @@ namespace BallGame.Tests.Editor
                 Object.DestroyImmediate(owner);
             }
         }
+        [Test]
+        public void Group_OneRewardCompletesTwoTargets_CommitAndHistoryStayIntact()
+        {
+            var second = AddTarget(Vector3.right * 4f, 0f);
+            MakeGroup(target, second);
+            Activate();
+            var firstTool = DropAt(target);
+            Assert.That(firstTool, Is.Not.Null, "Moving the next camera must not destroy the committed preview.");
+            Assert.That(State, Is.EqualTo("Assisting"));
+            Assert.That(Property(controller, "ActiveTarget"), Is.SameAs(second));
+            Assert.That(((IList)Get(manager, "placedTools")).Count, Is.EqualTo(1));
+            Assert.That(Get(provider, "pending"), Is.Null);
+            CompleteFocus();
+            DropAt(second);
+            Assert.That(State, Is.EqualTo("Idle"));
+            Assert.That(Call(manager, "GetRemaining", definition), Is.EqualTo(1));
+            Assert.That(((IList)Get(manager, "placedTools")).Count, Is.EqualTo(2));
+            Call(manager, "Undo");
+            Assert.That(((IList)Get(manager, "placedTools")).Count, Is.EqualTo(1));
+            Assert.That(State, Is.EqualTo("Idle"), "Finished groups require another reward after undo.");
+        }
+
+        [Test]
+        public void Group_UndoCompletedItem_RevisitsItAfterCurrentTarget()
+        {
+            var second = AddTarget(Vector3.right * 4f, 0f);
+            MakeGroup(target, second);
+            Activate();
+            DropAt(target);
+            CompleteFocus();
+            Call(manager, "Undo");
+            Call(controller, "Update");
+            Assert.That(Property(controller, "ActiveTarget"), Is.SameAs(second));
+            DropAt(second);
+            Assert.That(State, Is.EqualTo("Assisting"));
+            Assert.That(Property(controller, "ActiveTarget"), Is.SameAs(target));
+            CompleteFocus();
+            DropAt(target);
+            Assert.That(State, Is.EqualTo("Idle"));
+        }
+
+        [Test]
+        public void Group_MovedCompletedItemIsMissing_ButActiveDragNeverSwitchesCamera()
+        {
+            var second = AddTarget(Vector3.right * 4f, 0f);
+            MakeGroup(target, second);
+            Activate();
+            var first = DropAt(target);
+            CompleteFocus();
+            first.transform.position = Vector3.right * 10f;
+            Set(manager, "draggedPlacedTool", first);
+            Call(controller, "MarkDirty");
+            Call(controller, "Update");
+            Assert.That(Property(controller, "ActiveTarget"), Is.SameAs(second));
+            Assert.That(Property(camera, "IsHintFocusMoving"), Is.EqualTo(false));
+            Set(manager, "draggedPlacedTool", null);
+            DropAt(second);
+            Assert.That(Property(controller, "ActiveTarget"), Is.SameAs(target));
+            Assert.That(State, Is.EqualTo("Assisting"));
+        }
+
+        [Test]
+        public void Group_MatchingUsesMaximumOneToOneAssignment()
+        {
+            var narrow = AddTarget(Vector3.zero, 30f);
+            Set(target, "positionTolerance", 1.1f);
+            var group = MakeGroup(target, narrow);
+            var first = CreatePreview(Vector3.zero);
+            first.transform.rotation = Quaternion.Euler(0f, 0f, 30f);
+            Call(manager, "PlacePreview");
+            var one = (int[])Call(group, "MatchTargets", Property(manager, "PlacedTools"));
+            Assert.That(Array.FindAll(one, i => i >= 0).Length, Is.EqualTo(1));
+            var second = CreatePreview(Vector3.right);
+            second.transform.rotation = first.transform.rotation;
+            Call(manager, "PlacePreview");
+            var both = (int[])Call(group, "MatchTargets", Property(manager, "PlacedTools"));
+            Assert.That(both[0], Is.EqualTo(1));
+            Assert.That(both[1], Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Group_InsufficientSupplyOrInvalidMember_NeverStartsAd()
+        {
+            var group = MakeGroup(target, AddTarget(Vector3.right * 2f, 0f),
+                AddTarget(Vector3.right * 4f, 0f), AddTarget(Vector3.right * 6f, 0f));
+            Call(controller, "RequestHint");
+            Assert.That(State, Is.EqualTo("Idle"));
+            Assert.That(Get(provider, "pending"), Is.Null);
+            var targets = (IList)Get(group, "targets");
+            targets.RemoveAt(3);
+            Set(targets[1], "tool", null);
+            Call(controller, "RequestHint");
+            Assert.That(Get(provider, "pending"), Is.Null);
+            targets.Clear();
+            Call(controller, "RequestHint");
+            Assert.That(Get(provider, "pending"), Is.Null);
+        }
+
+        [Test]
+        public void Group_SimulationSuspendsUntilBuildRestored_TrueResetClearsReward()
+        {
+            var second = AddTarget(Vector3.right * 4f, 0f);
+            var group = MakeGroup(target, second);
+            Activate();
+            DropAt(target);
+            CompleteFocus();
+            var simulate = Enum.Parse(RuntimeType("BallGame.Core.GameState"), "Simulate");
+            Set(game, "<State>k__BackingField", simulate);
+            Call(controller, "OnGameStateChanged", simulate);
+            Call(manager, "SetSimulationMode", true);
+            Assert.That(((Component)Get(controller, "ghost")).gameObject.activeSelf, Is.False);
+            Assert.That(Property(controller, "ActiveGroup"), Is.SameAs(group));
+            var build = Enum.Parse(RuntimeType("BallGame.Core.GameState"), "Build");
+            Set(game, "<State>k__BackingField", build);
+            Call(controller, "OnGameStateChanged", build);
+            Call(controller, "Update");
+            Assert.That(((Component)Get(controller, "ghost")).gameObject.activeSelf, Is.False);
+            Call(manager, "SetSimulationMode", false);
+            ((Delegate)Get(game, "BuildRestored")).DynamicInvoke();
+            CompleteFocus();
+            Assert.That(State, Is.EqualTo("Assisting"));
+            Assert.That(Property(controller, "ActiveTarget"), Is.SameAs(second));
+            Assert.That(((Component)Get(controller, "ghost")).gameObject.activeSelf, Is.True);
+            ((Delegate)Get(game, "LevelResetting")).DynamicInvoke();
+            Assert.That(State, Is.EqualTo("Idle"));
+            Assert.That(Get(controller, "ghost"), Is.Null);
+        }
+
+        [Test]
+        public void LegacyTargetsRemainSeparateGroups_NewGroupsTakePrecedence()
+        {
+            var second = AddTarget(Vector3.right * 4f, 0f);
+            var legacy = new ArrayList();
+            foreach (var group in (IEnumerable)Call(level, "GetEffectivePlacementHintGroups")) legacy.Add(group);
+            Assert.That(legacy.Count, Is.EqualTo(2));
+            Assert.That(((IList)Get(legacy[0], "targets")).Count, Is.EqualTo(1));
+            MakeGroup(target, second);
+            int count = 0;
+            foreach (var group in (IEnumerable)Call(level, "GetEffectivePlacementHintGroups")) count++;
+            Assert.That(count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void LegacyConversion_PreservesEveryParameterAndSupportsUndo()
+        {
+            Set(target, "snapRadius", 1.2f);
+            Set(target, "cameraPosition", new Vector2(7f, 8f));
+            Set(target, "cameraMoveDuration", 1.3f);
+            Set(target, "positionTolerance", 0.2f);
+            Set(target, "rotationTolerance", 4f);
+            var editor = Type.GetType("BallGame.Editor.PlacementHintSetup, Assembly-CSharp-Editor", true);
+            Undo.IncrementCurrentGroup();
+            editor.GetMethod("ConvertLegacy").Invoke(null, new object[] { level });
+            Undo.FlushUndoRecordObjects();
+            var groups = (IList)Get(level, "placementHintGroups");
+            Assert.That(groups.Count, Is.EqualTo(1));
+            var copy = ((IList)Get(groups[0], "targets"))[0];
+            foreach (string field in new[] { "tool", "position", "rotationDegrees", "snapRadius", "cameraPosition", "cameraMoveDuration", "positionTolerance", "rotationTolerance" })
+                Assert.That(Get(copy, field), Is.EqualTo(Get(target, field)), field);
+            Undo.PerformUndo();
+            Assert.That(((IList)Get(level, "placementHintGroups")).Count, Is.Zero);
+            Assert.That(((IList)Get(level, "placementHints")).Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void EditorCapture_ResolvesFanChildren_SortsAndDeduplicates_AppendPreservesLegacy()
+        {
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
+            try
+            {
+                var systems = new GameObject("Group Capture Test");
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(systems, scene);
+                var sceneGame = systems.AddComponent(RuntimeType("BallGame.Core.GameManager"));
+                Set(sceneGame, "level", level);
+                var fanPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/Fan.prefab");
+                var first = (GameObject)PrefabUtility.InstantiatePrefab(fanPrefab, scene);
+                var second = (GameObject)PrefabUtility.InstantiatePrefab(fanPrefab, scene);
+                first.transform.SetSiblingIndex(1);
+                second.transform.SetSiblingIndex(2);
+                first.transform.position = new Vector3(2f, 3f, 0f);
+                second.transform.position = new Vector3(5f, 6f, 0f);
+                var editor = Type.GetType("BallGame.Editor.PlacementHintSetup, Assembly-CSharp-Editor", true);
+                var args = new object[] { new[] { second, first.transform.GetChild(0).gameObject, first }, null };
+                var captured = editor.GetMethod("CaptureSelection").Invoke(null, args);
+                var entries = (IList)captured;
+                Assert.That(entries.Count, Is.EqualTo(2));
+                Assert.That(args[1], Is.SameAs(level));
+                Assert.That(Get(entries[0], "position"), Is.EqualTo(first.transform.position));
+                Assert.That(Get(entries[1], "position"), Is.EqualTo(second.transform.position));
+                Assert.That(Get(entries[0], "tool"), Is.SameAs(AssetDatabase.LoadAssetAtPath<Object>("Assets/Tools/Fan.asset")));
+                editor.GetMethod("AppendTargets").Invoke(null, new[] { (object)level, -1, "风扇组", captured });
+                var groups = (IList)Get(level, "placementHintGroups");
+                Assert.That(groups.Count, Is.EqualTo(2));
+                Assert.That(((IList)Get(groups[0], "targets")).Count, Is.EqualTo(1));
+                Assert.That(((IList)Get(groups[1], "targets")).Count, Is.EqualTo(2));
+                editor.GetMethod("AppendTargets").Invoke(null, new[] { (object)level, 1, "风扇组", captured });
+                Assert.That(((IList)Get(((IList)Get(level, "placementHintGroups"))[1], "targets")).Count, Is.EqualTo(2));
+            }
+            finally { UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(scene); }
+        }
+
+        private object MakeGroup(params object[] targets)
+        {
+            var group = Activator.CreateInstance(RuntimeType("BallGame.Placement.PlacementHintGroup"));
+            foreach (var entry in targets)
+            {
+                Set(entry, "cameraMoveDuration", 0f);
+                ((IList)Get(group, "targets")).Add(entry);
+            }
+            ((IList)Get(level, "placementHintGroups")).Add(group);
+            return group;
+        }
+        private Component DropAt(object entry)
+        {
+            var tool = CreatePreview((Vector3)Get(entry, "position") + Vector3.right * 0.1f);
+            var screen = camera.GetComponent<Camera>().WorldToScreenPoint(tool.transform.position);
+            Call(manager, "FinishPlaceDrag", (Vector2)screen, true);
+            return tool;
+        }
+        private void CompleteFocus()
+        {
+            Call(camera, "LateUpdate");
+            Call(controller, "Update");
+        }
         private void Activate()
         {
             Set(target, "cameraMoveDuration", 0f);

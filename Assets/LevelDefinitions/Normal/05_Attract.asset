@@ -18,3 +18,20 @@ MonoBehaviour:
   tools:
   - tool: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
     count: 2
+  placementHints:
+  - tool: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
+    position: {x: 0.43359518, y: 0.5093084, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: 0.43359518, y: 0.5093084}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2
+  - tool: {fileID: 11400000, guid: 849d8b3cfc5b1df478fbd8691492472a, type: 2}
+    position: {x: 2.6013973, y: 0.48133677, z: 0}
+    rotationDegrees: 0
+    snapRadius: 0.65
+    cameraPosition: {x: 2.6013973, y: 0.48133677}
+    cameraMoveDuration: 0.6
+    positionTolerance: 0.05
+    rotationTolerance: 2

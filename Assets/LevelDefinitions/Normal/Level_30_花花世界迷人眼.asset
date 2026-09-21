@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b8a8999e767bf94191264ce44bd7e28, type: 3}
+  m_Name: "Level_30_\u82B1\u82B1\u4E16\u754C\u8FF7\u4EBA\u773C"
+  m_EditorClassIdentifier: 
+  levelTitle: "\u82B1\u82B1\u4E16\u754C\u8FF7\u4EBA\u773C"
+  mode: 0
+  toolCatalog: {fileID: 0}
+  tools:
+  - tool: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
+    count: 2
+  - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+    count: 1
+  - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+    count: 1
+  placementHints: []
+  placementHintGroups:
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 3289e598b2f397744ab1a347dc24eb5f, type: 2}
+      position: {x: -7.351, y: 2.128, z: 0}
+      rotationDegrees: 180
+      snapRadius: 0.65
+      cameraPosition: {x: -7.351, y: 2.128}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: 147241cc99fe5ad4fb5a64e27cabe64a, type: 2}
+      position: {x: -13.66, y: -11.26, z: 0}
+      rotationDegrees: 345
+      snapRadius: 0.65
+      cameraPosition: {x: -13.66, y: -11.26}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
+  - groupName: "\u63D0\u793A\u7EC4"
+    targets:
+    - tool: {fileID: 11400000, guid: e13edf3337a7a534fa4153e6dcd33b22, type: 2}
+      position: {x: 12.184828, y: 1.5024052, z: 0}
+      rotationDegrees: 14.999995
+      snapRadius: 0.65
+      cameraPosition: {x: 12.184828, y: 1.5024052}
+      cameraMoveDuration: 0.6
+      positionTolerance: 0.05
+      rotationTolerance: 2
